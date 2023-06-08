@@ -17,9 +17,11 @@ mod_biologdata_ui <- function(id) {
                                                            ),
                                            shiny::fluidRow(
                                                            shiny::column(6,
-                                                                         shiny::textInput(
-                                                                                          inputId = ns("artnamn"),
-                                                                                          label = "Artnamn (sv)"
+                                                                         shiny::selectInput(
+                                                                                            inputId = ns("artnamn"),
+                                                                                            label = "Artnamn (sv)",
+                                                                                            choices = c("Fisk", "Fågel"),
+                                                                                            selectize = TRUE
                                                                          )
                                                                          ),
                                                            shiny::column(6,
@@ -57,17 +59,32 @@ mod_biologdata_ui <- function(id) {
                                                             inputId = ns("provberedare"),
                                                             label = "Provberedare, enhet"
                                                             ),
-                                           shinyBS::tipify(
-                                                           shiny::dateInput(
-                                                                            inputId = ns("fangstdatum"),
-                                                                            label = "Fångstdatum fr - till",
-                                                                            value = NA
-                                                                            ),
-                                                           title = "ÅÅÅÅ-MM-DD",
-                                                           placement = "top"
+                                           shiny::fluidRow(
+                                                           shiny::column(6,
+                                                                         shinyBS::tipify(
+                                                                                         shiny::dateInput(
+                                                                                                          inputId = ns("fangstdatum_fran"),
+                                                                                                          label = "Fångstdatum från",
+                                                                                                          value = NA
+                                                                                                          ),
+                                                                                         title = "ÅÅÅÅ-MM-DD",
+                                                                                         placement = "top"
+                                                                         )
+                                                                         ),
+                                                           shiny::column(6,
+                                                                         shinyBS::tipify(
+                                                                                         shiny::dateInput(
+                                                                                                          inputId = ns("fangstdatum_till"),
+                                                                                                          label = "Fångstdatum till",
+                                                                                                          value = NA
+                                                                                                          ),
+                                                                                         title = "ÅÅÅÅ-MM-DD",
+                                                                                         placement = "top"
+                                                                         )
+                                                           )
                                            )
                              )
-             ),
+                             ),
              DT::DTOutput(outputId = ns("details_table"))
   )
 }
@@ -75,7 +92,7 @@ mod_biologdata_ui <- function(id) {
 mod_biologdata_server <- function(id) {
   shiny::moduleServer(id, function(input, output, session) {
                         shiny::observeEvent(input$antal, {
-                                              if (is.na(input$antal) || input$antal < 1) {
+                                              if (is.na(input$antal) || input$antal < 0) {
                                                 return()
                                               }
 
@@ -93,7 +110,7 @@ mod_biologdata_server <- function(id) {
                                                                                    dt,
                                                                                    options = list(paging = FALSE, colnames = NA),
                                                                                    rownames = FALSE)
-             }
+                             }
                         )
   })
 }
