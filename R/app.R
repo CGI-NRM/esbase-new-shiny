@@ -1,5 +1,5 @@
 # Package names
-packages <- c("shiny", "shinyBS", "DT", "devtools")
+packages <- c("shiny", "shinyBS", "DT", "remotes")
 
 # Install packages not yet installed
 installed_packages <- packages %in% rownames(installed.packages())
@@ -10,7 +10,7 @@ if (any(installed_packages == FALSE)) {
 # Packages loading
 invisible(lapply(packages, library, character.only = TRUE))
 
-devtools::install_github("cgi-nrm/esbaser")
+remotes::install_github("cgi-nrm/esbaser")
 
 #library(shiny)
 #library(shinyBS)
