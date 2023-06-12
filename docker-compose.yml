@@ -1,0 +1,9 @@
+services:
+  esbase-shiny:
+    image: esbase-shiny:latest
+    ports:
+      - "3838:3838"
+    volumes:
+      - type: bind
+        source: /home/elias/code/nrm/esbase-new-shiny/R
+        target: /R
