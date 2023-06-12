@@ -1,5 +1,8 @@
+version: '2'
+
 services:
   esbase-shiny:
+    build: .
     image: esbase-shiny:latest
     ports:
       - "3838:3838"
