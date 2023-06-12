@@ -60,6 +60,7 @@ mod_provlista_server <- function(id, selected_accnrs) {
       output$prov1_provid_table <- DT::renderDT(
         df,
         options = list(
+          paging = FALSE,
           filter = "none",
           dom = "t",
           ordering = FALSE,
@@ -68,7 +69,7 @@ mod_provlista_server <- function(id, selected_accnrs) {
         edit = list(target = "column", disable = list(columns = c(0))),
         rownames = FALSE,
         selection = "none",
-        server = FALSE
+        server = TRUE
       )
     })
 

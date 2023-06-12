@@ -1,5 +1,5 @@
 # Package names
-packages <- c("shiny", "shinyBS", "DT", "remotes")
+packages <- c("shiny", "shinyBS", "DT", "remotes", "stringr")
 
 # Install packages not yet installed
 installed_packages <- packages %in% rownames(installed.packages())
@@ -11,11 +11,6 @@ if (any(installed_packages == FALSE)) {
 invisible(lapply(packages, library, character.only = TRUE))
 
 remotes::install_github("cgi-nrm/esbaser")
-
-#library(shiny)
-#library(shinyBS)
-#library(DT)
-#library(esbaser)
 
 source("mod_biologdata.R")
 source("mod_provberedning.R")
