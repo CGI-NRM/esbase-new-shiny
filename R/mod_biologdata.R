@@ -88,7 +88,9 @@ mod_biologdata_ui <- function(id) {
                                              )
                                              )
                                              ),
-                                             DT::DTOutput(outputId = ns("details_table")),
+                                             shiny::div(class = "monospace",
+                                                        DT::DTOutput(outputId = ns("details_table"))
+                                             ),
                                              shiny::actionButton(
                                                inputId = ns("klona_accnr_fran_forsta"),
                                                label = "Kopiera AccNR från första"),
@@ -127,7 +129,7 @@ mod_biologdata_server <- function(id, selected_accnrs) {
       details_table$dt <- data.frame(matrix(nrow = input$antal, ncol = length(esbaser::get_biologdata_colnames(pretty = FALSE))))
       colnames(details_table$dt) <- esbaser::get_biologdata_colnames(pretty = FALSE)
 
-      details_table$dt[, "accnr"] <- rep("-", input$antal)
+      details_table$dt[, "accnr"] <- rep("", input$antal)
       selected_accnrs(details_table$dt[, "accnr"])
 
       for (row in 1:input$antal) {
@@ -138,16 +140,20 @@ mod_biologdata_server <- function(id, selected_accnrs) {
         details_table$dt,
         options = list(
           paging = FALSE,
+          processing = FALSE,
           dom = "t",
           ordering = FALSE,
           filter = "none",
           scrollX = TRUE,
           autoWidth = TRUE,
-          columnDefs = list(list(width = "110px", targets = c(1), className = "monospace"))),
-        rownames = FALSE,
+          columnDefs = list(
+            list(width = "110px", targets = c(2)),
+            list(width = "20px", targets = c(0))
+          )
+        ),
         server = TRUE,
         selection = "none",
-        edit = list(target = "column"),
+        edit = list(target = "column", disable = list(columns = c(0))),
         colnames = esbaser::get_biologdata_colnames(pretty = TRUE)
       )
       details_table$proxy <- DT::dataTableProxy("details_table")
@@ -157,7 +163,11 @@ mod_biologdata_server <- function(id, selected_accnrs) {
       changed <- FALSE
 
       for (row in seq_len(nrow(input$details_table_cell_edit))) {
-        if (input$details_table_cell_edit[row, "col"] == 1) {
+        j <- input$details_table_cell_edit[row, "col"]
+        if (j == 0 || is.na(colnames(details_table$dt)[j])) {
+          next
+        }
+        if (colnames(details_table$dt)[j] == "accnr") {
           v <- stringr::str_trim(input$details_table_cell_edit[row, "value"])
           empty <- v == "-" || v == ""
           valid <- esbaser::accnr_validate(v)
@@ -175,10 +185,11 @@ mod_biologdata_server <- function(id, selected_accnrs) {
           }
 
           if (empty || !valid) {
-            details_table$dt[row, "accnr"] <- "-"
+            details_table$dt[row, "accnr"] <- ""
           }
 
           if (!empty && !valid) {
+            changed <- TRUE
             shiny::showNotification(
               "Invalid AccNR format. Please enter on the form A2022/12345 or A202212345.", duration = 30, type = "error")
           }
@@ -196,7 +207,7 @@ mod_biologdata_server <- function(id, selected_accnrs) {
       for (row in seq_len(nrow(input$details_table_cell_edit))) {
         details_table$dt[row, ] <- esbaser::get_accnr_biologdata(details_table$dt[row, "accnr"])
       }
-      DT::replaceData(details_table$proxy, details_table$dt, resetPaging = FALSE, rownames = FALSE)
+      DT::replaceData(details_table$proxy, details_table$dt, resetPaging = FALSE) #, rownames = FALSE)
     }
 
     klona_accnr_fran_forsta <- function() {

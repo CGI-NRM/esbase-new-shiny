@@ -19,7 +19,8 @@ source("mod_provlista.R")
 ui <- shiny::fluidPage(
   includeCSS("www/style.css"),
   shiny::titlePanel("Esbase New"),
-  mod_provberedning_ui("provberedning")
+  mod_provberedning_ui("provberedning"),
+  shiny::div(style = "height: 100vh")
 )
 
 server <- function(input, output, session) {
