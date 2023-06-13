@@ -64,7 +64,8 @@ mod_provlista_server <- function(id, selected_accnrs) {
           filter = "none",
           dom = "t",
           ordering = FALSE,
-          columnDefs = list(list(width = "200px", targets = "_all"))
+          autoWidth = TRUE,
+          columnDefs = list(list(width = "110px", targets = c(0), className = "monospace"))
         ),
         edit = list(target = "column", disable = list(columns = c(0))),
         rownames = FALSE,

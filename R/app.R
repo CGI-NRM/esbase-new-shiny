@@ -1,5 +1,5 @@
 # Package names
-packages <- c("shiny", "shinyBS", "DT", "remotes", "stringr")
+packages <- c("shiny", "shinyBS", "DT", "remotes", "stringr", "dplyr")
 
 # Install packages not yet installed
 installed_packages <- packages %in% rownames(installed.packages())
@@ -17,6 +17,7 @@ source("mod_provberedning.R")
 source("mod_provlista.R")
 
 ui <- shiny::fluidPage(
+  includeCSS("www/style.css"),
   shiny::titlePanel("Esbase New"),
   mod_provberedning_ui("provberedning")
 )

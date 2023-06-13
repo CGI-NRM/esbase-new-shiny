@@ -88,7 +88,13 @@ mod_biologdata_ui <- function(id) {
                                              )
                                              )
                                              ),
-                                             DT::DTOutput(outputId = ns("details_table"))
+                                             DT::DTOutput(outputId = ns("details_table")),
+                                             shiny::actionButton(
+                                               inputId = ns("klona_accnr_fran_forsta"),
+                                               label = "Kopiera AccNR från första"),
+                                             shiny::actionButton(
+                                               inputId = ns("sekvens_accnr_fran_forsta"),
+                                               label = "Sekvens av AccNR från första")
                                              )
 }
 
@@ -113,47 +119,41 @@ mod_biologdata_server <- function(id, selected_accnrs) {
       shiny::updateSelectInput(session, "artnamn", choices = c("", arter_vector)) # Empty string so that select is empty when page loads
     }
 
-    update_details_table_new_amount <- function() {
+    render_dt_details_table <- function() {
       if (is.na(input$antal) || input$antal < 0) {
         return()
       }
 
-      colnames <- c("Annat NRMnr.", "Acc.nr.", "Ålder (år)",
-                    "Kroppsvikt (g)", "Totallängd (cm)",
-                    "Kroppslängd (cm)", "Kön", "Gonadvikt (g)",
-                    "Gonad sparad J/N", "Levervikt (g)", "Lever kvar (g)",
-                    "Parasit (g)", "Skrottvikt (g)", "Mage sparad J/N",
-                    "Notering/Avvikelse")
-      details_table$dt <- data.frame(matrix(nrow = input$antal, ncol = length(colnames)))
-      accnrs <- data.frame(letter = "A", year = 2022, value = 1:input$antal)
-      accnrs_strs <- unlist(lapply(1:input$antal, function(row) {
-        esbaser::accnr_sprint(accnrs[row, ])
-      }))
-      selected_accnrs(accnrs_strs)
-      details_table$dt[, 2] <- selected_accnrs()
+      details_table$dt <- data.frame(matrix(nrow = input$antal, ncol = length(esbaser::get_biologdata_colnames(pretty = FALSE))))
+      colnames(details_table$dt) <- esbaser::get_biologdata_colnames(pretty = FALSE)
+
+      details_table$dt[, "accnr"] <- rep("-", input$antal)
+      selected_accnrs(details_table$dt[, "accnr"])
 
       for (row in 1:input$antal) {
-        details_table$dt[row, ] <- esbaser::get_accnr_biologdata(details_table$dt[row, 2])
+        details_table$dt[row, ] <- esbaser::get_accnr_biologdata(details_table$dt[row, "accnr"])
       }
 
-      colnames(details_table$dt) <- colnames
       output$details_table <- DT::renderDT(
         details_table$dt,
         options = list(
           paging = FALSE,
-          colnames = NA,
           dom = "t",
           ordering = FALSE,
-          filter = "none"),
+          filter = "none",
+          scrollX = TRUE,
+          autoWidth = TRUE,
+          columnDefs = list(list(width = "110px", targets = c(1), className = "monospace"))),
         rownames = FALSE,
         server = TRUE,
         selection = "none",
-        edit = list(target = "column")
+        edit = list(target = "column"),
+        colnames = esbaser::get_biologdata_colnames(pretty = TRUE)
       )
       details_table$proxy <- DT::dataTableProxy("details_table")
     }
 
-    update_details_table_new_accnr <- function() {
+    handle_details_table_cell_edit <- function() {
       changed <- FALSE
 
       for (row in seq_len(nrow(input$details_table_cell_edit))) {
@@ -166,23 +166,60 @@ mod_biologdata_server <- function(id, selected_accnrs) {
             v <- ""
           }
 
-          details_table$dt[row, 2] <- shiny::isolate(DT::coerceValue(v, details_table$dt[row, 2]))
-          details_table$dt[row, ] <- esbaser::get_accnr_biologdata(details_table$dt[row, 2])
-          changed <- TRUE
+          if (v != details_table$dt[row, "accnr"]) {
+            if (valid) {
+              v <- v %>% esbaser::accnr_parse() %>% esbaser::accnr_sprint()
+            }
+            details_table$dt[row, "accnr"] <- v
+            changed <- TRUE
+          }
 
           if (empty || !valid) {
-            details_table$dt[row, 2] <- "-"
+            details_table$dt[row, "accnr"] <- "-"
           }
 
           if (!empty && !valid) {
             shiny::showNotification(
-              "Invalid AccNR format. Please enter on the form A2022/12345 or A202212345.", duration = 30, type = "warning")
+              "Invalid AccNR format. Please enter on the form A2022/12345 or A202212345.", duration = 30, type = "error")
           }
         }
       }
+
+      selected_accnrs(details_table$dt[, "accnr"])
+
       if (changed) {
-        selected_accnrs(details_table$dt[, 2])
-        DT::replaceData(details_table$proxy, details_table$dt)
+        update_dt_details_table()
+      }
+    }
+
+    update_dt_details_table <- function() {
+      for (row in seq_len(nrow(input$details_table_cell_edit))) {
+        details_table$dt[row, ] <- esbaser::get_accnr_biologdata(details_table$dt[row, "accnr"])
+      }
+      DT::replaceData(details_table$proxy, details_table$dt, resetPaging = FALSE, rownames = FALSE)
+    }
+
+    klona_accnr_fran_forsta <- function() {
+      if (esbaser::accnr_validate(details_table$dt[1, "accnr"])) {
+        first_accnr <- esbaser::accnr_parse(details_table$dt[1, "accnr"])
+        details_table$dt[, "accnr"] <- esbaser::accnr_sprint(first_accnr)
+        selected_accnrs(details_table$dt[, "accnr"])
+        update_dt_details_table()
+      } else {
+        shiny::showNotification("Invalid AccNR in first position.", duration = 15, type = "error")
+      }
+    }
+
+    sekvens_accnr_fran_forsta <- function() {
+      if (esbaser::accnr_validate(details_table$dt[1, "accnr"])) {
+        first_accnr <- esbaser::accnr_parse(details_table$dt[1, "accnr"])
+        for (row in 1:input$antal) {
+          details_table$dt[row, "accnr"] <- esbaser::accnr_sprint(esbaser::accnr_add(first_accnr, row - 1))
+        }
+        selected_accnrs(details_table$dt[, "accnr"])
+        update_dt_details_table()
+      } else {
+        shiny::showNotification("Invalid AccNR in first position.", duration = 15, type = "error")
       }
     }
 
@@ -191,11 +228,19 @@ mod_biologdata_server <- function(id, selected_accnrs) {
 
     # ---------- OBSERVE EVENTS ----------
     shiny::observeEvent(input$antal, {
-      update_details_table_new_amount()
+      render_dt_details_table()
     })
 
     shiny::observeEvent(input$details_table_cell_edit, {
-      update_details_table_new_accnr()
+      handle_details_table_cell_edit()
+    })
+
+    shiny::observeEvent(input$klona_accnr_fran_forsta, {
+      klona_accnr_fran_forsta()
+    })
+
+    shiny::observeEvent(input$sekvens_accnr_fran_forsta, {
+      sekvens_accnr_fran_forsta()
     })
   })
 }

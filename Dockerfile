@@ -9,6 +9,7 @@ RUN Rscript -e 'install.packages("remotes")' && \
 
 RUN Rscript -e 'remotes::install_github("cgi-nrm/esbaser")'
 
-COPY ./R /R
+COPY ./R /
+COPY ./www /www
 
-CMD R -e 'shiny::runApp("R/app.R", port = 3838, host = "0.0.0.0")'
+CMD R -e 'shiny::runApp("/app.R", port = 3838, host = "0.0.0.0")'
