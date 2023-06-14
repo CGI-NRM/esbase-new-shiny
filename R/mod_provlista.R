@@ -39,18 +39,78 @@ mod_provlista_ui <- function(id) {
 
 mod_provlista_server <- function(id, selected_accnrs) {
   shiny::moduleServer(id, function(input, output, session) {
-    # ---------- FUNCTIONS ----------
+    provid_table <- shiny::reactiveValues()
 
-    output$provid_table <- rhandsontable::renderRHandsontable({ 
-      df <- data.frame(
-        A = LETTERS[1:11],
-        B = 10:20,
-        C = rep(TRUE, 11)
+    # ---------- FUNCTIONS ----------
+    create_provid_table <- function() {
+      provid_table$df <- data.frame(
+        accnr = selected_accnrs(),
+        provid = "",
+        ACES = "",
+        delvikt = as.numeric(NA))
+    }
+
+    handle_provid_table_change <- function(new_table) {
+    changed <- any(provid_table$df != new_table)
+      if (!is.na(changed) && changed) {
+        provid_table$df <- new_table
+        render_provid_table()
+      }
+    }
+
+    render_provid_table <- function() {
+      output$provid_table <- rhandsontable::renderRHandsontable({
+        rhandsontable::rhandsontable(provid_table$df, rowHeaders = FALSE, overflow = "visible") |>
+        rhandsontable::hot_context_menu(allowRowEdit = FALSE, allowColEdit = FALSE, allowComments = FALSE) |>
+        rhandsontable::hot_col("accnr", readOnly = TRUE) |>
+        rhandsontable::hot_col("provid", renderer = "
+                               function (instance, td, row, col, prop, value, cellProperties) {
+                                 Handsontable.renderers.TextRenderer.apply(this, arguments);
+                                 re = /^Q[0-9]{4}\\/?[0-9]{5}$/;
+                                 if (value.match(re) === null) {
+                                   td.style.background = 'red';
+                                 } else {
+                                   td.style.background = 'white';
+                                 }
+                               }
+                               ")
+      })
+    }
+
+    klona_provid_fran_forsta <- function() {
+      if (!esbaser::accnr_validate(provid_table$df[1, "provid"])) {
+        shiny::showNotification(
+          "Invalid or missing ProvID in first row. Please enter on the form 'Q2022/12345' or 'Q202212345'",
+          type = "warning")
+        return()
+      }
+
+      new_table <- provid_table$df
+      new_table[, "provid"] <- provid_table$df[1, "provid"]
+      handle_provid_table_change(new_table)
+    }
+
+    sekvens_provid_fran_forsta <- function() {
+      if (!esbaser::accnr_validate(provid_table$df[1, "provid"])) {
+        shiny::showNotification(
+          "Invalid or missing ProvID in first row. Please enter on the form 'Q2022/12345' or 'Q202212345'",
+          type = "warning")
+        return()
+      }
+
+      parsed <- esbaser::accnr_parse(provid_table$df[1, "provid"])
+      new_table <- provid_table$df
+      new_table[, "provid"] <- unlist(
+        lapply(
+          seq_len(nrow(new_table)),
+          function(i) {
+            esbaser::accnr_sprint(esbaser::accnr_add(parsed, i - 1))
+          }
+        )
       )
 
-      rhandsontable::rhandsontable(df)
-    })
-
+      handle_provid_table_change(new_table)
+    }
 
     # ---------- OBSERVE EVENTS ----------
     shiny::observeEvent(input$set_limniska, {
@@ -61,9 +121,23 @@ mod_provlista_server <- function(id, selected_accnrs) {
       shiny::showNotification("Lägger till ett prov")
     })
 
-#    shiny::observe({
-#      selected_accnrs()
-#      shiny::isolate(render_provid_table())
-#    })
+    shiny::observe({
+      selected_accnrs()
+      shiny::isolate(create_provid_table())
+      shiny::isolate(render_provid_table())
+    })
+
+    shiny::observeEvent(input$prov1_klona_provid_fran_forsta, {
+      klona_provid_fran_forsta()
+    })
+
+    shiny::observeEvent(input$prov1_sekvens_provid_fran_forsta, {
+      sekvens_provid_fran_forsta()
+    })
+
+    shiny::observeEvent(input$provid_table, {
+      new_table <- rhandsontable::hot_to_r(input$provid_table)
+      handle_provid_table_change(new_table)
+    })
   })
 }

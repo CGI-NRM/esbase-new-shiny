@@ -88,13 +88,21 @@ mod_biologdata_ui <- function(id) {
                                              )
                                              )
                                              ),
-                                             rhandsontable::rHandsontableOutput(ns("details_table"))
+                                             rhandsontable::rHandsontableOutput(ns("details_table")),
+                                             shiny::actionButton(
+                                               inputId = ns("klona_accnr_fran_forsta"),
+                                               label = "Kopiera AccNR från första"),
+                                             shiny::actionButton(
+                                               inputId = ns("sekvens_accnr_fran_forsta"),
+                                               label = "Sekvens av AccNR från första")
                                              )
 }
 
 
 mod_biologdata_server <- function(id, selected_accnrs) {
   shiny::moduleServer(id, function(input, output, session) {
+    details_table <- shiny::reactiveValues()
+
     # ---------- FUNCTIONS ----------
     update_select_inputs_with_stodlistor <- function() {
       paste_collapse <- function(x) {
@@ -111,11 +119,119 @@ mod_biologdata_server <- function(id, selected_accnrs) {
       shiny::updateSelectInput(session, "artnamn", choices = c("", arter_vector)) # Empty string so that select is empty when page loads
     }
 
+    create_empty_details_table <- function() {
+      if (is.na(input$antal) || input$antal < 0) {
+        return()
+      }
+
+      details_table$df <- do.call(rbind, lapply(rep("", input$antal), esbaser::get_accnr_biologdata))
+      selected_accnrs(details_table$df[, "accnr"])
+    }
+
+    render_details_table <- function() {
+      shiny::req(details_table$df)
+
+      output$details_table <- rhandsontable::renderRHandsontable({
+        rhandsontable::rhandsontable(details_table$df, rowHeaders = NULL, overflow = "visible") |>
+        rhandsontable::hot_context_menu(allowRowEdit = FALSE, allowColEdit = FALSE, allowComments = FALSE, allowCustomBorders = FALSE) |>
+        rhandsontable::hot_col("accnr", renderer = "
+                               function (instance, td, row, col, prop, value, cellProperties) {
+                                Handsontable.renderers.TextRenderer.apply(this, arguments);
+                                re = /^[ABCDGHLXP][0-9]{4}\\/?[0-9]{5}$/;
+                                if (value.match(re) === null) {
+                                  td.style.background = 'red';
+                                } else {
+                                  td.style.background = 'white';
+                                }
+                               }
+                               ")
+      })
+    }
+
+    handle_details_table_update <- function(new_table) {
+      if (nrow(new_table) != nrow(details_table$df)) {
+        shiny::showNotification(
+          "The new table does not have the same number of rows as the table on the " +
+          "server. Please submit an issue (github.com/cgi-nrm/esbase-new-shiny)", type = "error")
+        return()
+      }
+
+      changed <- FALSE
+
+      for (row in seq_len(nrow(new_table))) {
+        valid <- esbaser::accnr_validate(new_table[row, "accnr"])
+
+        if (details_table$df[row, "accnr"] != new_table[row, "accnr"]) {
+          if (valid || new_table[row, "accnr"] == "") {
+            changed <- TRUE
+            details_table$df[row, ] <- esbaser::get_accnr_biologdata(new_table[row, "accnr"])
+          } else if (!valid && new_table[row, "accnr"] != "") {
+            shiny::showNotification("Invalid AccNR format, please enter on the form 'A2022/12345' or 'A202212345'.", type = "warning")
+          }
+        }
+      }
+
+      if (changed) {
+        selected_accnrs(details_table$df[, "accnr"])
+        render_details_table()
+      }
+    }
+
+    klona_accnr_fran_forsta <- function() {
+      if (!esbaser::accnr_validate(details_table$df[1, "accnr"])) {
+        shiny::showNotification(
+          "Invalid or missing AccNR in first row. Please enter on the form 'A2022/12345' or 'A202212345'",
+          type = "warning")
+        return()
+      }
+
+      new_table <- details_table$df
+      new_table[, "accnr"] <- details_table$df[1, "accnr"]
+      handle_details_table_update(new_table)
+    }
+
+    sekvens_accnr_fran_forsta <- function() {
+      if (!esbaser::accnr_validate(details_table$df[1, "accnr"])) {
+        shiny::showNotification(
+          "Invalid or missing AccNR in first row. Please enter on the form 'A2022/12345' or 'A202212345'",
+          type = "warning")
+        return()
+      }
+
+      parsed <- esbaser::accnr_parse(details_table$df[1, "accnr"])
+      new_table <- details_table$df
+      new_table[, "accnr"] <- unlist(
+        lapply(
+          seq_len(nrow(new_table)),
+          function(i) {
+            esbaser::accnr_sprint(esbaser::accnr_add(parsed, i - 1))
+          }
+        )
+      )
+
+      handle_details_table_update(new_table)
+    }
+
     # ---------- ONE-TIME SETUP ----------
     update_select_inputs_with_stodlistor()
 
     # ---------- OBSERVE EVENTS ----------
     shiny::observeEvent(input$antal, {
+      create_empty_details_table()
+      render_details_table()
+    })
+
+    shiny::observeEvent(input$details_table, {
+      new_table <- rhandsontable::hot_to_r(input$details_table)
+      handle_details_table_update(new_table)
+    })
+
+    shiny::observeEvent(input$klona_accnr_fran_forsta, {
+      klona_accnr_fran_forsta()
+    })
+
+    shiny::observeEvent(input$sekvens_accnr_fran_forsta, {
+      sekvens_accnr_fran_forsta()
     })
   })
 }
