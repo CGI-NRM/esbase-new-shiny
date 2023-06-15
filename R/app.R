@@ -1,5 +1,5 @@
 # Package names
-packages <- c("shiny", "shinyBS", "DT", "remotes", "stringr", "dplyr")
+packages <- c("shiny", "shinyBS", "DT", "remotes", "stringr", "dplyr", "rhandsontable")
 
 # Install packages not yet installed
 installed_packages <- packages %in% rownames(installed.packages())
@@ -15,6 +15,7 @@ remotes::install_github("cgi-nrm/esbaser")
 source("mod_biologdata.R")
 source("mod_provberedning.R")
 source("mod_provlista.R")
+source("mod_validera.R")
 
 ui <- shiny::fluidPage(
   includeCSS("www/style.css"),
