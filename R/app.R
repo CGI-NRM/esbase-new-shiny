@@ -15,6 +15,7 @@ remotes::install_github("cgi-nrm/esbaser")
 source("mod_biologdata.R")
 source("mod_provberedning.R")
 source("mod_provlista.R")
+source("mod_validera.R")
 
 ui <- shiny::fluidPage(
   includeCSS("www/style.css"),

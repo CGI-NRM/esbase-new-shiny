@@ -22,7 +22,8 @@ mod_provberedning_ui <- function(id) {
              shiny::tabsetPanel(
                type = "tabs",
                shiny::tabPanel(title = "Biologdata", mod_biologdata_ui(ns("biologdata"))),
-               shiny::tabPanel(title = "Provlista", mod_provlista_ui(ns("provlista")))
+               shiny::tabPanel(title = "Provlista", mod_provlista_ui(ns("provlista"))),
+               shiny::tabPanel(title = "Validera", mod_validera_ui(ns("validera")))
              )
              )
 }
@@ -33,5 +34,6 @@ mod_provberedning_server <- function(id) {
   shiny::moduleServer(id, function(input, output, session) {
     mod_biologdata_server("biologdata", selected_accnrs)
     mod_provlista_server("provlista", selected_accnrs)
+    mod_validera_server("validera")
   })
 }

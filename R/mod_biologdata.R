@@ -132,27 +132,39 @@ mod_biologdata_server <- function(id, selected_accnrs) {
       shiny::req(details_table$df)
 
       output$details_table <- rhandsontable::renderRHandsontable({
-        rhandsontable::rhandsontable(details_table$df, rowHeaders = NULL, overflow = "visible") |>
-        rhandsontable::hot_context_menu(allowRowEdit = FALSE, allowColEdit = FALSE, allowComments = FALSE, allowCustomBorders = FALSE) |>
+        hot <- rhandsontable::rhandsontable(details_table$df, rowHeaders = NULL, overflow = "visible") |>
+        rhandsontable::hot_context_menu(allowRowEdit = FALSE, allowColEdit = FALSE, allowComments = TRUE, allowCustomBorders = FALSE) |>
         rhandsontable::hot_col("accnr", renderer = "
                                function (instance, td, row, col, prop, value, cellProperties) {
                                 Handsontable.renderers.TextRenderer.apply(this, arguments);
                                 re = /^[ABCDGHLXP][0-9]{4}\\/?[0-9]{5}$/;
-                                if (value.match(re) === null) {
+                                if (value !== null && value.match(re) === null) {
                                   td.style.background = 'red';
                                 } else {
                                   td.style.background = 'white';
                                 }
                                }
-                               ")
+                               ") |>
+        rhandsontable::hot_row(which(details_table$df[, "accnr"] == ""), readOnly = TRUE)
+
+        for (row in seq_len(nrow(details_table$df))) {
+          if (details_table$df[row, "accnr"] == "") {
+            hot <- rhandsontable::hot_cell(hot, row, "accnr", readOnly = FALSE)
+          }
+        }
+
+        hot
       })
     }
 
     handle_details_table_update <- function(new_table) {
       if (nrow(new_table) != nrow(details_table$df)) {
         shiny::showNotification(
-          "The new table does not have the same number of rows as the table on the " +
-          "server. Please submit an issue (github.com/cgi-nrm/esbase-new-shiny)", type = "error")
+          paste0(
+            "You tried to add more rows than specified in 'Antal ind.'. Please increase",
+            " table size to add your data."
+          ), type = "warning", duration = 30)
+        render_details_table()
         return()
       }
 
@@ -162,6 +174,7 @@ mod_biologdata_server <- function(id, selected_accnrs) {
         valid <- esbaser::accnr_validate(new_table[row, "accnr"])
 
         if (details_table$df[row, "accnr"] != new_table[row, "accnr"]) {
+
           if (valid || new_table[row, "accnr"] == "") {
             changed <- TRUE
             details_table$df[row, ] <- esbaser::get_accnr_biologdata(new_table[row, "accnr"])
