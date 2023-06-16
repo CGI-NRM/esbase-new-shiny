@@ -1,5 +1,5 @@
 # Package names
-packages <- c("shiny", "shinyBS", "DT", "remotes", "stringr", "dplyr", "rhandsontable")
+packages <- c("shiny", "shinyBS", "DT", "remotes", "stringr", "dplyr", "rhandsontable", "htmlwidgets")
 
 # Install packages not yet installed
 installed_packages <- packages %in% rownames(installed.packages())
@@ -16,6 +16,9 @@ source("mod_biologdata.R")
 source("mod_provberedning.R")
 source("mod_provlista.R")
 source("mod_validera.R")
+
+source("provlist_ui.R")
+source("rhandsontable_js.R")
 
 ui <- shiny::fluidPage(
   includeCSS("www/style.css"),
