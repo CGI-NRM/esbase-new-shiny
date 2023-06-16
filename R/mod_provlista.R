@@ -60,7 +60,7 @@ mod_provlista_server <- function(id, selected_accnrs) {
       provid_table$df <- data.frame(
         accnr = selected_accnrs(),
         provid = "",
-        ACES = "",
+        aces = "",
         delvikt = as.numeric(NA),
         provvikt = as.numeric(NA))
     }
@@ -93,22 +93,58 @@ mod_provlista_server <- function(id, selected_accnrs) {
 
     render_provid_table <- function() {
       output$provid_table <- rhandsontable::renderRHandsontable({
-        cols <- c("accnr", "provid", "provvikt")
+        cols <- c("accnr", "provid")
+        if (input$prov1_homogenat) {
+          cols <- c(cols, "delvikt")
+        }
+        if (input$prov1_analyslab == "ACES") {
+          cols <- c(cols, "aces")
+        }
+        cols <- c(cols, "provvikt")
         df <- provid_table$df[cols]
-        rhandsontable::rhandsontable(df, rowHeaders = FALSE, overflow = "visible") |>
+
+        hot <- rhandsontable::rhandsontable(df, rowHeaders = FALSE, overflow = "visible") |>
         rhandsontable::hot_context_menu(allowRowEdit = FALSE, allowColEdit = FALSE, allowComments = FALSE) |>
         rhandsontable::hot_col("accnr", readOnly = TRUE) |>
         rhandsontable::hot_col("provid", renderer = "
                                function (instance, td, row, col, prop, value, cellProperties) {
                                  Handsontable.renderers.TextRenderer.apply(this, arguments);
-                                 re = /^Q[0-9]{4}\\-[0-9]{5}$/;
-                                 if (value !== null && value.match(re) === null) {
-                                   td.style.background = 'red';
+
+                                 if (cellProperties.readOnly) {
+                                  td.style.background = 'lightgray';
+                                  td.style.color = 'gray';
+                                  if (value === null || value === '') {
+                                    td.innerText = '-';
+                                  }
                                  } else {
-                                   td.style.background = 'white';
+                                   re = /^Q[0-9]{4}\\-[0-9]{5}$/;
+                                   if (value === null || value.match(re) === null) {
+                                     td.style.background = 'red';
+                                   } else {
+                                     td.style.background = 'white';
+                                   }
+                                 }
+                               }
+                               ") |>
+        rhandsontable::hot_col(which(colnames(df) != "provid"), renderer = "
+                               function (instance, td, row, col, prop, value, cellProperties) {
+                                 Handsontable.renderers.TextRenderer.apply(this, arguments);
+
+                                 if (cellProperties.readOnly) {
+                                   td.style.background = 'lightgray';
+                                   td.style.color = 'gray';
+                                   if (value === null || value === '') {
+                                     td.innerText = '-';
+                                   }
+                                 } else {
+                                   customRenderer(instance, td, row, col, prop, value, cellProperties)
                                  }
                                }
                                ")
+
+        hot <- rhandsontable::hot_row(hot, which(selected_accnrs() == ""), readOnly = TRUE)
+
+        hot
       })
     }
 

@@ -129,10 +129,11 @@ mod_biologdata_server <- function(id, selected_accnrs) {
     }
 
     render_details_table <- function() {
-      shiny::req(details_table$df)
+      shiny::req(shiny::isolate(details_table$df))
+      df <- shiny::isolate(details_table$df)
 
       output$details_table <- rhandsontable::renderRHandsontable({
-        hot <- rhandsontable::rhandsontable(details_table$df, rowHeaders = NULL, overflow = "visible") |>
+        hot <- rhandsontable::rhandsontable(df, rowHeaders = NULL, overflow = "visible") |>
         rhandsontable::hot_context_menu(allowRowEdit = FALSE, allowColEdit = FALSE, allowComments = TRUE, allowCustomBorders = FALSE) |>
         rhandsontable::hot_col("accnr", renderer = "
                                function (instance, td, row, col, prop, value, cellProperties) {
@@ -145,11 +146,27 @@ mod_biologdata_server <- function(id, selected_accnrs) {
                                 }
                                }
                                ") |>
-        rhandsontable::hot_row(which(details_table$df[, "accnr"] == ""), readOnly = TRUE)
+        rhandsontable::hot_col(which(colnames(df) != "accnr"), renderer = "
+                               function (instance, td, row, col, prop, value, cellProperties) {
+                                 Handsontable.renderers.TextRenderer.apply(this, arguments);
 
-        for (row in seq_len(nrow(details_table$df))) {
-          if (details_table$df[row, "accnr"] == "") {
-            hot <- rhandsontable::hot_cell(hot, row, "accnr", readOnly = FALSE)
+                                 if (cellProperties.readOnly) {
+                                   td.style.background = 'lightgray';
+                                   td.style.color = 'gray';
+                                   if (value === null || value === '') {
+                                     td.innerText = '-';
+                                   }
+                                 } else {
+                                   customRenderer(instance, td, row, col, prop, value, cellProperties)
+                                 }
+                               }
+                               ")
+
+        for (row in seq_len(nrow(df))) {
+          if (df[row, "accnr"] == "") {
+            for (col in which(colnames(df) != "accnr")) {
+              hot <- rhandsontable::hot_cell(hot, row, col, readOnly = TRUE)
+            }
           }
         }
 
@@ -180,6 +197,10 @@ mod_biologdata_server <- function(id, selected_accnrs) {
             details_table$df[row, ] <- esbaser::get_accnr_biologdata(new_table[row, "accnr"])
           } else if (!valid && new_table[row, "accnr"] != "") {
             shiny::showNotification("Invalid AccNR format, please enter on the form 'A2022/12345' or 'A202212345'.", type = "warning")
+            if (details_table$df[row, "accnr"] != "") {
+              details_table$df[row, ] <- esbaser::get_accnr_biologdata("")
+              changed <- TRUE
+            }
           }
         }
       }
