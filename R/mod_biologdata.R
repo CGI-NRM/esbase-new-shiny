@@ -135,32 +135,9 @@ mod_biologdata_server <- function(id, selected_accnrs) {
       output$details_table <- rhandsontable::renderRHandsontable({
         hot <- rhandsontable::rhandsontable(df, rowHeaders = NULL, overflow = "visible") |>
         rhandsontable::hot_context_menu(allowRowEdit = FALSE, allowColEdit = FALSE, allowComments = TRUE, allowCustomBorders = FALSE) |>
-        rhandsontable::hot_col("accnr", renderer = "
-                               function (instance, td, row, col, prop, value, cellProperties) {
-                                Handsontable.renderers.TextRenderer.apply(this, arguments);
-                                re = /^[ABCDGHLXP][0-9]{4}\\/?[0-9]{5}$/;
-                                if (value !== null && value.match(re) === null) {
-                                  td.style.background = 'red';
-                                } else {
-                                  td.style.background = 'white';
-                                }
-                               }
-                               ") |>
-        rhandsontable::hot_col(which(colnames(df) != "accnr"), renderer = "
-                               function (instance, td, row, col, prop, value, cellProperties) {
-                                 Handsontable.renderers.TextRenderer.apply(this, arguments);
-
-                                 if (cellProperties.readOnly) {
-                                   td.style.background = 'lightgray';
-                                   td.style.color = 'gray';
-                                   if (value === null || value === '') {
-                                     td.innerText = '-';
-                                   }
-                                 } else {
-                                   customRenderer(instance, td, row, col, prop, value, cellProperties)
-                                 }
-                               }
-                               ")
+        rhandsontable::hot_col("accnr", renderer = rhot_renderer_validate_accnr) |>
+        rhandsontable::hot_col(which(colnames(df) != "accnr"), renderer = rhot_renderer_gray_bg_on_read_only) |>
+        rhot_set_visual_colheaders(esbaser::get_biologdata_colnames(pretty = TRUE))
 
         for (row in seq_len(nrow(df))) {
           if (df[row, "accnr"] == "") {
