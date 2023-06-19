@@ -125,7 +125,7 @@ mod_biologdata_server <- function(id, selected_accnrs) {
       }
 
       if (NROW(details_table$df) < input$antal) {
-        new_rows <- do.call(rbind, lapply(rep("", input$antal - NROW(details_table$df)), esbaser::get_accnr_biologdata))
+        new_rows <- bind_rows(lapply(rep("", input$antal - NROW(details_table$df)), esbaser::get_accnr_biologdata))
         details_table$df <- rbind(details_table$df, new_rows)
       } else {
         details_table$df <- details_table$df[1:input$antal, ]
