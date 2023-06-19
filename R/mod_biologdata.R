@@ -119,12 +119,18 @@ mod_biologdata_server <- function(id, selected_accnrs) {
       shiny::updateSelectInput(session, "artnamn", choices = c("", arter_vector)) # Empty string so that select is empty when page loads
     }
 
-    create_empty_details_table <- function() {
+    update_details_table_rowcount <- function() {
       if (is.na(input$antal) || input$antal < 0) {
         return()
       }
 
-      details_table$df <- do.call(rbind, lapply(rep("", input$antal), esbaser::get_accnr_biologdata))
+      if (NROW(details_table$df) < input$antal) {
+        new_rows <- do.call(rbind, lapply(rep("", input$antal - NROW(details_table$df)), esbaser::get_accnr_biologdata))
+        details_table$df <- rbind(details_table$df, new_rows)
+      } else {
+        details_table$df <- details_table$df[1:input$antal, ]
+      }
+
       selected_accnrs(details_table$df[, "accnr"])
     }
 
@@ -133,8 +139,8 @@ mod_biologdata_server <- function(id, selected_accnrs) {
       df <- shiny::isolate(details_table$df)
 
       output$details_table <- rhandsontable::renderRHandsontable({
-        hot <- rhandsontable::rhandsontable(df, rowHeaders = NULL, overflow = "visible") |>
-        rhandsontable::hot_context_menu(allowRowEdit = FALSE, allowColEdit = FALSE, allowComments = TRUE, allowCustomBorders = FALSE) |>
+        hot <- rhandsontable::rhandsontable(df, rowHeaders = NULL, overflow = "visible", maxRows = nrow(df)) |>
+        rhandsontable::hot_context_menu(allowRowEdit = FALSE, allowColEdit = FALSE, allowComments = FALSE, allowCustomBorders = FALSE) |>
         rhandsontable::hot_col("accnr", renderer = rhot_renderer_validate_accnr) |>
         rhandsontable::hot_col(which(colnames(df) != "accnr"), renderer = rhot_renderer_gray_bg_on_read_only) |>
         rhot_set_visual_colheaders(esbaser::get_biologdata_colnames(pretty = TRUE))
@@ -155,8 +161,8 @@ mod_biologdata_server <- function(id, selected_accnrs) {
       if (nrow(new_table) != nrow(details_table$df)) {
         shiny::showNotification(
           paste0(
-            "You tried to add more rows than specified in 'Antal ind.'. Please increase",
-            " table size to add your data."
+            "You tried to add or remove rows from the specified 'Antal ind.'. Please modify",
+            " 'Antal ind.' to add your data."
           ), type = "warning", duration = 30)
         render_details_table()
         return()
@@ -228,7 +234,7 @@ mod_biologdata_server <- function(id, selected_accnrs) {
 
     # ---------- OBSERVE EVENTS ----------
     shiny::observeEvent(input$antal, {
-      create_empty_details_table()
+      update_details_table_rowcount()
       render_details_table()
     })
 
