@@ -235,6 +235,7 @@ mod_provlista_server <- function(id, selected_accnrs) {
 
     shiny::observeEvent(selected_accnrs(), {
       # TODO: If accnr changed, remove row
+      # TODO: If length(selected_accnrs()) change, do not clear all data, only add the necessary new rows
       current_dfs <- provid_table$dfs
       for (name in provs()) {
         if (is.null(current_dfs[[name]]) || nrow(current_dfs[[name]]) != length(selected_accnrs())) {
