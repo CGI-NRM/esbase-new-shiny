@@ -97,7 +97,7 @@ mod_provlista_server <- function(id, selected_accnrs) {
 
       output[[prov_io(name, "provid_table")]] <- rhandsontable::renderRHandsontable({
         hot <- rhandsontable::rhandsontable(df, rowHeaders = FALSE, overflow = "visible", maxRows = nrow(df)) |>
-        rhandsontable::hot_context_menu(allowRowEdit = FALSE, allowColEdit = FALSE, allowComments = FALSE) |>
+        rhandsontable::hot_context_menu(allowRowEdit = FALSE, allowColEdit = FALSE, allowComments = FALSE, allowCustomBorders = FALSE) |>
         rhandsontable::hot_col("accnr", readOnly = TRUE) |>
         rhandsontable::hot_col("provid", renderer = rhot_renderer_validate_provid_gray_bg_on_read_only) |>
         rhandsontable::hot_col(which(colnames(df) != "provid"), renderer = rhot_renderer_gray_bg_on_read_only) |>
