@@ -21,7 +21,7 @@ source("provlist_ui.R")
 source("rhandsontable_js.R")
 
 ui <- shiny::fluidPage(
-  includeCSS("www/style.css"),
+  shiny::includeCSS("www/style.css"),
   shiny::titlePanel("Esbase New"),
   mod_provberedning_ui("provberedning"),
   shiny::div(style = "height: 100vh")
