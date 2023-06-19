@@ -161,8 +161,8 @@ mod_biologdata_server <- function(id, selected_accnrs) {
       if (nrow(new_table) != nrow(details_table$df)) {
         shiny::showNotification(
           paste0(
-            "You tried to add more rows than specified in 'Antal ind.'. Please increase",
-            " table size to add your data."
+            "You tried to add or remove rows from the specified 'Antal ind.'. Please modify",
+            " 'Antal ind.' to add your data."
           ), type = "warning", duration = 30)
         render_details_table()
         return()
