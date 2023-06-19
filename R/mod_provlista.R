@@ -168,17 +168,16 @@ mod_provlista_server <- function(id, selected_accnrs) {
     }
 
     add_new_prov_section_observe_events <- function(name) {
-      shiny::observeEvent(input[[prov_io(name, "analyslab")]], {
-        render_provid_table(name)
-      }, once = TRUE)
-
+      # This handles the first render aswell when the UI has been renderer, and the input$ has been initialized
+      # Except for the initial prov1, where the input already exists and the observeEvent for selected_accnrs()
+      #     creates and does the initial render
       o1 <- shiny::observeEvent({
         input[[prov_io(name, "analyslab")]]
         input[[prov_io(name, "homogenat")]]
         1
       }, {
         render_provid_table(name)
-      })
+      }, ignoreInit = TRUE)
 
       o2 <- shiny::observeEvent(input[[prov_io(name, "klona_provid_fran_forsta")]], {
         klona_provid_fran_forsta(name)
