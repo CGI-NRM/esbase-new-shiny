@@ -197,7 +197,7 @@ mod_provlista_server <- function(id, selected_accnrs) {
     }
 
     delete_prov_section <- function(name) {
-    ## OBS NOT TESTED/USED YET
+      # NOTE: OBS NOT TESTED/USED YET
       # remove name from provs
       provs(provs()[-which(provs() == name)])
 
