@@ -1,5 +1,5 @@
 # Package names
-packages <- c("shiny", "shinyBS", "DT", "remotes", "stringr", "dplyr", "rhandsontable", "htmlwidgets")
+packages <- c("shiny", "shinyBS", "DT", "remotes", "stringr", "dplyr", "rhandsontable", "htmlwidgets", "tibble")
 
 # Install packages not yet installed
 installed_packages <- packages %in% rownames(installed.packages())
