@@ -119,12 +119,18 @@ mod_biologdata_server <- function(id, selected_accnrs) {
       shiny::updateSelectInput(session, "artnamn", choices = c("", arter_vector)) # Empty string so that select is empty when page loads
     }
 
-    create_empty_details_table <- function() {
+    update_details_table_rowcount <- function() {
       if (is.na(input$antal) || input$antal < 0) {
         return()
       }
 
-      details_table$df <- do.call(rbind, lapply(rep("", input$antal), esbaser::get_accnr_biologdata))
+      if (NROW(details_table$df) < input$antal) {
+        new_rows <- do.call(rbind, lapply(rep("", input$antal - NROW(details_table$df)), esbaser::get_accnr_biologdata))
+        details_table$df <- rbind(details_table$df, new_rows)
+      } else {
+        details_table$df <- details_table$df[1:input$antal, ]
+      }
+
       selected_accnrs(details_table$df[, "accnr"])
     }
 
@@ -228,7 +234,7 @@ mod_biologdata_server <- function(id, selected_accnrs) {
 
     # ---------- OBSERVE EVENTS ----------
     shiny::observeEvent(input$antal, {
-      create_empty_details_table()
+      update_details_table_rowcount()
       render_details_table()
     })
 
