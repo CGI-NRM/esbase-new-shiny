@@ -85,23 +85,24 @@ mod_provlista_server <- function(id, selected_accnrs) {
       }
 
       cols <- c("accnr", "provid")
-      if (input[[prov_io(name, "homogenat")]]) {
-        cols <- c(cols, "delvikt")
-      }
       if (input[[prov_io(name, "analyslab")]] == "ACES") {
         cols <- c(cols, "aces")
+      }
+      if (input[[prov_io(name, "homogenat")]]) {
+        cols <- c(cols, "delvikt")
       }
       cols <- c(cols, "provvikt")
 
       df <- provid_table$dfs[[name]][cols]
+
       output[[prov_io(name, "provid_table")]] <- rhandsontable::renderRHandsontable({
-        hot <- rhandsontable::rhandsontable(df, rowHeaders = FALSE, overflow = "visible") |>
+        hot <- rhandsontable::rhandsontable(df, rowHeaders = FALSE, overflow = "visible", maxRows = nrow(df)) |>
         rhandsontable::hot_context_menu(allowRowEdit = FALSE, allowColEdit = FALSE, allowComments = FALSE) |>
         rhandsontable::hot_col("accnr", readOnly = TRUE) |>
         rhandsontable::hot_col("provid", renderer = rhot_renderer_validate_provid_gray_bg_on_read_only) |>
         rhandsontable::hot_col(which(colnames(df) != "provid"), renderer = rhot_renderer_gray_bg_on_read_only) |>
         rhandsontable::hot_row(which(selected_accnrs() == ""), readOnly = TRUE) |>
-        rhot_set_visual_colheaders(provid_table_cols_pretty[which(provid_table_cols %in% cols)])
+        rhot_set_visual_colheaders(provid_table_cols_pretty[match(cols, provid_table_cols)])
 
         hot
       })
