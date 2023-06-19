@@ -8,7 +8,7 @@ mod_provlista_ui <- function(id) {
              shiny::actionButton(inputId = ns("lagg_till_prov"), label = "Lägg till prov"),
              shiny::br(),
              shiny::actionButton(inputId = ns("set_limniska"), label = "Set Limniska Programmet Prover", disabled = TRUE)
-             )
+  )
 }
 
 mod_provlista_server <- function(id, selected_accnrs) {
