@@ -4,14 +4,10 @@ mod_provberedning_ui <- function(id) {
   shiny::div(id = ns("provberedning"),
              shiny::div(style = "margin: 20px",
                         shiny::fluidRow(
-                          shiny::actionButton(
-                            inputId = ns("download_excel"),
-                            label = "Download Excel",
+                          shiny::downloadButton(
+                            outputId = ns("download_report"),
+                            label = "Generate Report",
                             icon = shiny::icon("download")),
-                          shiny::actionButton(
-                            inputId = ns("upload_excel"),
-                            label = "Upload Excel",
-                            icon = shiny::icon("upload")),
                           shiny::actionButton(
                             inputId = ns("write_to_esbase"),
                             label = "Write to ESBase",
@@ -32,6 +28,11 @@ mod_provberedning_server <- function(id) {
   selected_accnrs <- shiny::reactiveVal()
 
   shiny::moduleServer(id, function(input, output, session) {
+    output$download_report <- shiny::downloadHandler(
+      filename = "report.pdf",
+      content = report_content
+    )
+
     mod_biologdata_server("biologdata", selected_accnrs)
     mod_provlista_server("provlista", selected_accnrs)
     mod_validera_server("validera")

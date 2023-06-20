@@ -4,6 +4,7 @@ services:
   esbase-shiny:
     build: .
     image: esbase-shiny:latest
+    container_name: esbase-shiny
     ports:
       - "3838:3838"
         #    volumes:

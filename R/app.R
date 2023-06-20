@@ -19,6 +19,7 @@ source("mod_validera.R")
 
 source("provlist_ui.R")
 source("rhandsontable_js.R")
+source("report.R")
 
 ui <- shiny::fluidPage(
   shiny::includeCSS("www/style.css"),
