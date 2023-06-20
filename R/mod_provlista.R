@@ -3,7 +3,7 @@ mod_provlista_ui <- function(id) {
 
   shiny::div(id = ns("provlista"),
              shiny::h3("Provlista"),
-             provlist_ui(create_prov_ns("prov1", ns)),
+             provlist_ui(create_prov_ns("prov1", ns), "prov1"),
              shiny::div(id = ns("after_provs")),
              shiny::actionButton(inputId = ns("lagg_till_prov"), label = "Lägg till prov"),
              shiny::br(),
@@ -158,7 +158,7 @@ mod_provlista_server <- function(id, selected_accnrs) {
 
       prov_ns_current <- create_prov_ns(name, session$ns)
 
-      shiny::insertUI(paste0("#", session$ns("after_provs")), where = "beforeBegin", provlist_ui(prov_ns_current))
+      shiny::insertUI(paste0("#", session$ns("after_provs")), where = "beforeBegin", provlist_ui(prov_ns_current, name))
 
       provs(c(provs(), name))
 
