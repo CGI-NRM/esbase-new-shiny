@@ -87,9 +87,6 @@ mod_biologdata_ui <- function(id) {
                                              ),
                                              rhandsontable::rHandsontableOutput(ns("details_table")),
                                              shiny::actionButton(
-                                               inputId = ns("klona_accnr_fran_forsta"),
-                                               label = "Kopiera AccNR från första"),
-                                             shiny::actionButton(
                                                inputId = ns("sekvens_accnr_fran_forsta"),
                                                label = "Sekvens av AccNR från första")
                                              )
@@ -199,19 +196,6 @@ mod_biologdata_server <- function(id, selected_accnrs) {
       }
     }
 
-    klona_accnr_fran_forsta <- function() {
-      if (!esbaser::accnr_validate(details_table$df[1, "accnr"])) {
-        shiny::showNotification(
-          "Invalid or missing AccNR in first row. Please enter on the form 'A2022/12345' or 'A202212345'",
-          type = "warning")
-        return()
-      }
-
-      new_table <- details_table$df
-      new_table[, "accnr"] <- details_table$df[1, "accnr"]
-      handle_details_table_update(new_table)
-    }
-
     sekvens_accnr_fran_forsta <- function() {
       if (!esbaser::accnr_validate(details_table$df[1, "accnr"])) {
         shiny::showNotification(
@@ -246,10 +230,6 @@ mod_biologdata_server <- function(id, selected_accnrs) {
     shiny::observeEvent(input$details_table, {
       new_table <- rhandsontable::hot_to_r(input$details_table)
       handle_details_table_update(new_table)
-    })
-
-    shiny::observeEvent(input$klona_accnr_fran_forsta, {
-      klona_accnr_fran_forsta()
     })
 
     shiny::observeEvent(input$sekvens_accnr_fran_forsta, {
