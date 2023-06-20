@@ -168,6 +168,11 @@ mod_provlista_server <- function(id, selected_accnrs) {
     }
 
     add_new_prov_section_observe_events <- function(name) {
+    # Once the vavnad select exists, update it with the options from esbase
+      shiny::observeEvent(input[[prov_io(name, "vavnad")]], {
+        update_select_inputs_with_stodlistor(name)
+      }, once = TRUE)
+
       # This handles the first render aswell when the UI has been renderer, and the input$ has been initialized
       # Except for the initial prov1, where the input already exists and the observeEvent for selected_accnrs()
       #     creates and does the initial render
@@ -196,6 +201,16 @@ mod_provlista_server <- function(id, selected_accnrs) {
       provs_observe_events[[name]] <- c(o1, o2, o3, o4)
     }
 
+    update_select_inputs_with_stodlistor <- function(name) {
+      # Update vävnad choices from stödlista
+      material_type <- esbaser::get_options_material_type()
+      material_type_vector <- material_type[, "id", drop = TRUE]
+      names(material_type_vector) <- material_type[, "representation", drop = TRUE]
+      shiny::updateSelectizeInput(session, prov_io(name, "vavnad"),
+                                  choices = material_type_vector,
+                                  selected = NA, server = TRUE)
+    }
+
     delete_prov_section <- function(name) {
       # NOTE: OBS NOT TESTED/USED YET
       # remove name from provs
@@ -212,6 +227,7 @@ mod_provlista_server <- function(id, selected_accnrs) {
 
     # ---------- ONE-TIME SETUP ----------
     add_new_prov_section_observe_events("prov1")
+    update_select_inputs_with_stodlistor("prov1")
 
     # ---------- OBSERVE EVENTS ----------
     shiny::observeEvent(input$set_limniska, {

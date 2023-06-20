@@ -38,9 +38,12 @@ provlist_ui <- function(prov_ns, name) {
                           )
                ),
                shiny::div(style = "display:inline-block",
-                          shiny::selectInput(inputId = prov_ns("vavnad"),
-                                             label = "Vävnad",
-                                             choices = c("", "Muskell", "Lever")
+                          shiny::selectizeInput(inputId = prov_ns("vavnad"),
+                                                label = "Vävnad",
+                                                choices = c(""),
+                                                options = list(
+                                                  placeholder = "Vävnad/Material typ"
+                                                )
                           )
                ),
                shiny::div(style = "display:inline-block",
