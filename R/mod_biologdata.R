@@ -5,23 +5,21 @@ mod_biologdata_ui <- function(id) {
              shiny::h3("Biologdata"),
              shiny::fluidRow(
                shiny::column(4,
-                             shinyBS::tipify(
-                               shiny::selectInput(
-                                 inputId = ns("lokal"),
-                                 label = "Lokal",
-                                 choices = c(""),
-                                 selectize = TRUE,
-                               ),
-                               title = "(Område, sjö, närmsta ort, sjödist.)",
-                               placement = "top"
+                             shiny::selectizeInput(
+                               inputId = ns("lokal"),
+                               label = "Lokal",
+                               choices = c(""),
+                               options = list(placeholder = "Lokal"),
+                               width = "100%"
                              ),
                              shiny::fluidRow(
                                shiny::column(6,
-                                             shiny::selectInput(
+                                             shiny::selectizeInput(
                                                inputId = ns("artnamn"),
                                                label = "Artnamn (sv)",
                                                choices = c(""),
-                                               selectize = TRUE
+                                               options = list(placeholder = "Artnamn"),
+                                               width = "100%"
                                              )
                                ),
                                shiny::column(6,
@@ -46,14 +44,13 @@ mod_biologdata_ui <- function(id) {
                                              title = "ÅÅÅÅ-MM-DD",
                                              placement = "top"
                                            ),
-                                           shinyBS::tipify(
-                                             shiny::textInput(
-                                               inputId = ns("projekt"),
-                                               label = "Projekt /Program"
-                                             ),
-                                             title = "(t.ex. x-projekt etc)",
-                                             placement = "top"
-                                           )
+                                           shiny::selectizeInput(
+                                             inputId = ns("projekt"),
+                                             label = "Projekt /Program",
+                                             choices = c(""),
+                                             options = list(placeholder = "Projekt"),
+                                             width = "100%"
+                                           ),
                              ),
                              shiny::column(4,
                                            shiny::textInput(
@@ -105,18 +102,26 @@ mod_biologdata_server <- function(id, selected_accnrs) {
 
     # ---------- FUNCTIONS ----------
     update_select_inputs_with_stodlistor <- function() {
-      paste_collapse <- function(x) {
-        paste(x[x != ""], collapse = ", ")
-      }
       # Update lokaler choices from stödlista
-      lokaler <- esbaser::get_stodlista_lokaler()
-      lokaler_vector <- apply(lokaler, 1, paste_collapse) # Combine data from all columns
-      shiny::updateSelectInput(session, "lokal", choices = c("", lokaler_vector)) # Empty string so that select is empty when page loads
+      lokaler <- esbaser::get_options_lokaler()
+      lokaler_vector <- lokaler[, "id", drop = TRUE]
+      names(lokaler_vector) <- lokaler[, "representation", drop = TRUE]
+      shiny::updateSelectizeInput(session, "lokal", choices = lokaler_vector,
+                                  selected = NA, server = TRUE)
 
       # Update arter choices from stödlista
-      arter <- esbaser::get_stodlista_arter()
-      arter_vector <- apply(arter, 1, paste_collapse) # Combine data from all columns
-      shiny::updateSelectInput(session, "artnamn", choices = c("", arter_vector)) # Empty string so that select is empty when page loads
+      species <- esbaser::get_options_species()
+      species_vector <- species[, "id", drop = TRUE]
+      names(species_vector) <- species[, "representation", drop = TRUE]
+      shiny::updateSelectizeInput(session, "artnamn", choices = species_vector,
+                                  selected = NA, server = TRUE)
+
+      # Update project choices from stödlista
+      projects <- esbaser::get_options_project()
+      projects_vector <- projects[, "id", drop = TRUE]
+      names(projects_vector) <- projects[, "representation", drop = TRUE]
+      shiny::updateSelectizeInput(session, "projekt", choices = projects_vector,
+                                  selected = NA, server = TRUE)
     }
 
     update_details_table_rowcount <- function() {
