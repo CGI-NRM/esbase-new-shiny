@@ -52,9 +52,28 @@ mod_provlista_server <- function(id, selected_accnrs, provlista_table) {
         return()
       }
       changed <- FALSE
-      for (col in colnames(new_table)) {
-        cells_changed <- provid_table$dfs[[name]][col] != new_table[col]
-        cells_changed <- cells_changed | xor(is.na(provid_table$dfs[[name]][col]), is.na(new_table[col]))
+
+
+      # Clear rows with changed accnrs
+      rows_accnr_changed <- provlista_table$dfs[[name]]["accnr"] != new_table["accnr"]
+      rows_accnr_changed <- rows_accnr_changed | xor(is.na(provlista_table$dfs[[name]]["accnr"]), is.na(new_table["accnr"]))
+      if (any(rows_accnr_changed)) {
+        changed <- TRUE
+
+        provlista_table$dfs[[name]][rows_accnr_changed, ] <- data.frame(
+          accnr = new_table[rows_accnr_changed, "accnr"],
+          provid = "",
+          aces = "",
+          delvikt = as.numeric(NA),
+          provvikt = as.numeric(NA)
+        )
+      }
+
+      cn <- colnames(new_table)
+      for (col in cn[cn != "accnr"]) {
+        cells_changed <- provlista_table$dfs[[name]][col] != new_table[col]
+        cells_changed <- cells_changed | xor(is.na(provlista_table$dfs[[name]][col]), is.na(new_table[col]))
+        cells_changed <- cells_changed & !rows_accnr_changed
 
         rows <- which(cells_changed)
         provlista_table$dfs[[name]][rows, col] <- new_table[rows, col]
