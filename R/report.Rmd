@@ -1,17 +1,27 @@
 ---
 title: "Dynamic report"
 output: pdf_document
+classoption: 
+  - landscape
+  - a4paper
+geometry: 
+  - margin=2cm
 params:
-  n: NA
+    biologdata: NA
+    provlista: NA
 ---
 
-```{r}
-# The `params` object is available in the document.
-params$n
+
+# Biologdata
+
+```{r, echo = FALSE}
+knitr::kable(params$biologdata, "latex", col.names = colnames(params$biologdata))
 ```
 
-A plot of `params$n` random points.
+\newpage
 
-```{r}
-plot(rnorm(params$n), rnorm(params$n))
+# Provlista 
+
+```{r, echo = FALSE}
+knitr::kable(params$provlista, "latex", col.names = colnames(params$provlista))
 ```
