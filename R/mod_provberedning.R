@@ -25,16 +25,25 @@ mod_provberedning_ui <- function(id) {
 }
 
 mod_provberedning_server <- function(id) {
+  # A vector of the currently selected accnrs as specified in the table in the biologdata tab
   selected_accnrs <- shiny::reactiveVal()
+  # Containing $df which is the table of the biologdata pulled from the db and entered by the user
+  biologdata_table <- shiny::reactiveValues()
+  # Containing provlista_table$dfs which is a list where the keys are the names of the prov, and the values are the coresponding dataframe
+  provlista_table <- shiny::reactiveValues()
 
   shiny::moduleServer(id, function(input, output, session) {
+    content_wrapper <- function(file) {
+      report_content(file, biologdata_table$df, provlista_table$dfs[["prov1"]])
+    }
+
     output$download_report <- shiny::downloadHandler(
       filename = "report.pdf",
-      content = report_content
+      content = content_wrapper
     )
 
-    mod_biologdata_server("biologdata", selected_accnrs)
-    mod_provlista_server("provlista", selected_accnrs)
+    mod_biologdata_server("biologdata", selected_accnrs, biologdata_table)
+    mod_provlista_server("provlista", selected_accnrs, provlista_table)
     mod_validera_server("validera")
   })
 }
