@@ -78,7 +78,7 @@ mod_provlista_server <- function(id, selected_accnrs, provlista_table) {
         rows <- which(cells_changed)
         provlista_table$dfs[[name]][rows, col] <- new_table[rows, col]
 
-        if (length(rows)) {
+        if (length(rows) > 0) {
           changed <- TRUE
         }
       }
