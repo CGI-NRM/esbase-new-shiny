@@ -1,5 +1,5 @@
 # Package names
-packages <- c("shiny", "shinyBS", "DT", "remotes", "stringr", "dplyr", "rhandsontable", "htmlwidgets", "tibble")
+packages <- c("shiny", "shinyBS", "DT", "remotes", "stringr", "dplyr", "rhandsontable", "htmlwidgets", "tibble", "knitr", "kableExtra")
 
 # Install packages not yet installed
 installed_packages <- packages %in% rownames(installed.packages())
@@ -8,7 +8,8 @@ if (any(installed_packages == FALSE)) {
 }
 
 # Packages loading
-invisible(lapply(packages, library, character.only = TRUE))
+# Commented out to force the use of package::function to make it clearer where functions come from
+# invisible(lapply(packages, library, character.only = TRUE))
 
 remotes::install_github("cgi-nrm/esbaser")
 

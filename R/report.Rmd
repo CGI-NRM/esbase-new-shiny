@@ -5,23 +5,42 @@ classoption:
   - landscape
   - a4paper
 geometry: 
-  - margin=2cm
+  - margin=1.5cm
 params:
     biologdata: NA
-    provlista: NA
+    biologdata_colnames: NA
+    provlistas: NA
+    provlistas_colnames: NA
+header-includes:
+  - \usepackage{booktabs}
+  - \usepackage{longtable}
+  - \usepackage{array}
+  - \usepackage{multirow}
+  - \usepackage{wrapfig}
+  - \usepackage{float}
+  - \usepackage{colortbl}
+  - \usepackage{pdflscape}
+  - \usepackage{tabu}
+  - \usepackage{threeparttable}
+  - \usepackage{threeparttablex}
+  - \usepackage[normalem]{ulem}
+  - \usepackage{makecell}
+  - \usepackage{xcolor}
 ---
 
+<!-- https://haozhu233.github.io/kableExtra/awesome_table_in_pdf.pdf -->
 
-# Biologdata
-
-```{r, echo = FALSE}
-knitr::kable(params$biologdata, "latex", col.names = colnames(params$biologdata))
+```{r, echo = FALSE, message = FALSE}
+options(knitr.kable.NA = "")
+df <- params$biologdata
+knitr::kable(df, "latex", col.names = params$biologdata_colnames, linesep = "", booktabs = TRUE, caption = "Biologdata") |>
+    kableExtra::kable_styling(latex_options = c("striped", "hold_position", "scale_down"), position = "center") |>
+    kableExtra::row_spec(row = 0, angle = 60)
 ```
 
 \newpage
 
-# Provlista 
-
 ```{r, echo = FALSE}
-knitr::kable(params$provlista, "latex", col.names = colnames(params$provlista))
+knitr::kable(dplyr::bind_cols(params$provlistas), "latex", col.names = unlist(params$provlistas_colnames))
+# Add_header_above
 ```

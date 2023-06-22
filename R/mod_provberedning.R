@@ -34,7 +34,12 @@ mod_provberedning_server <- function(id) {
 
   shiny::moduleServer(id, function(input, output, session) {
     content_wrapper <- function(file) {
-      report_content(file, biologdata_table$df, provlista_table$dfs[["prov1"]])
+      report_content(file = file,
+                     biologdata = biologdata_table$df_db,
+                     biologdata_colnames = esbaser::get_biologdata_colnames(pretty = TRUE),
+                     provlistas = provlista_table$dfs,
+                     provlistas_colnames = lapply(provlista_table$dfs, colnames)
+      )
     }
 
     output$download_report <- shiny::downloadHandler(
