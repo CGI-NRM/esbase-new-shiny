@@ -58,6 +58,7 @@ df <- accnr
 cnames <- c("Acc.nr.")
 ccount <- c(1)
 
+# TODO: Load delvikt and ACES depending on provXXX parameter
 for (n in names(params$provlistas)) {
     df <- dplyr::bind_cols(df, params$provlistas[[n]] |> dplyr::select("provid", "provvikt"))
     cnames <- c(cnames, "ProvID", "Provvikt (g)")
