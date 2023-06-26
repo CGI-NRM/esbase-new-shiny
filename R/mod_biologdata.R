@@ -209,10 +209,16 @@ mod_biologdata_server <- function(id, selected_accnrs, biologdata_table) {
         }
       }
 
-      # TODO: Solve this for factor colmuns
-      # There is a problem where the handsontable seems to convert NA factors into ordered
       cn <- colnames(new_table)
-      for (col in cn[cn != "accnr" & cn != "kon" & cn != "gonad_sparad" & cn != "mage_sparad"]) {
+
+      # rhandsontable converts all facotrs to ordered factors, convert them back according to what is already in the df_override df
+      for (col in cn) {
+        if (is.factor(new_table[, col])) {
+          new_table[, col] <- factor(new_table[, col], levels = levels(biologdata_table$df_override[, col]), ordered = FALSE)
+        }
+      }
+
+      for (col in cn[cn != "accnr"]) {
         rows_changed <- biologdata_table$df_db[col] != new_table[col]
         rows_changed <- rows_changed | xor(is.na(biologdata_table$df_db[col]), is.na(new_table[col]))
         rows_changed <- rows_changed & !rows_replaced_accnr
