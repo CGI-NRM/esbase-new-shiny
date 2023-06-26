@@ -8,6 +8,7 @@ geometry:
   - margin=1.5cm
 params:
     biologdata: NA
+    biologdata_override: NA
     biologdata_colnames: NA
     provlistas: NA
     provlistas_colnames: NA
@@ -33,14 +34,42 @@ header-includes:
 ```{r, echo = FALSE, message = FALSE}
 options(knitr.kable.NA = "")
 df <- params$biologdata
-knitr::kable(df, "latex", col.names = params$biologdata_colnames, linesep = "", booktabs = TRUE, caption = "Biologdata") |>
+cn <- colnames(df)
+
+for (col in cn[cn != "accnr"]) {
+    rows <- !is.na(params$biologdata_override[, col, drop = TRUE])
+    df[rows, col] <- params$biologdata_override[rows, col]
+}
+
+knitr::kable(df, "latex", col.names = params$biologdata_colnames, linesep = "", booktabs = FALSE, caption = "Biologdata") |>
     kableExtra::kable_styling(latex_options = c("striped", "hold_position", "scale_down"), position = "center") |>
-    kableExtra::row_spec(row = 0, angle = 60)
+    kableExtra::row_spec(row = 0, angle = 45)
 ```
 
 \newpage
 
-```{r, echo = FALSE}
-knitr::kable(dplyr::bind_cols(params$provlistas), "latex", col.names = unlist(params$provlistas_colnames))
-# Add_header_above
+```{r, echo = FALSE, message = FALSE}
+if (length(params$provlistas) == 0) {
+    return()
+}
+
+accnr <- params$provlistas[[1]][, "accnr"]
+df <- accnr
+cnames <- c("Acc.nr.")
+ccount <- c(1)
+
+for (n in names(params$provlistas)) {
+    df <- dplyr::bind_cols(df, params$provlistas[[n]] |> dplyr::select("provid", "provvikt"))
+    cnames <- c(cnames, "ProvID", "Provvikt (g)")
+    ccount <- c(ccount, 2)
+}
+
+names(ccount) <- c(" ", names(params$provlistas))
+
+knitr::kable(
+             df, "latex", col.names = cnames,
+             linesep = "", booktabs = FALSE, caption = "Provlista") |>
+    kableExtra::kable_styling(latex_options = c("striped", "hold_position", "full_width"), position = "center") |>
+    kableExtra::row_spec(row = 0, angle = 30) |>
+    kableExtra::add_header_above(ccount)
 ```
