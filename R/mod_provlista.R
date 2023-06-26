@@ -114,15 +114,14 @@ mod_provlista_server <- function(id, selected_accnrs, provlista_table) {
       df <- provlista_table$dfs[[name]][cols]
 
       output[[prov_io(name, "provid_table")]] <- rhandsontable::renderRHandsontable({
-        hot <- rhandsontable::rhandsontable(df, rowHeaders = FALSE, overflow = "visible", maxRows = nrow(df)) |>
-        rhandsontable::hot_context_menu(allowRowEdit = FALSE, allowColEdit = FALSE, allowComments = FALSE, allowCustomBorders = FALSE) |>
-        rhandsontable::hot_col("accnr", readOnly = TRUE) |>
-        rhandsontable::hot_col("provid", renderer = rhot_renderer_validate_provid_gray_bg_on_read_only) |>
-        rhandsontable::hot_col(which(colnames(df) != "provid"), renderer = rhot_renderer_gray_bg_on_read_only) |>
-        rhandsontable::hot_row(which(selected_accnrs() == ""), readOnly = TRUE) |>
-        rhot_set_visual_colheaders(provid_table_cols_pretty[match(cols, provid_table_cols)])
-
-        hot
+        rhandsontable::rhandsontable(df, rowHeaders = FALSE, overflow = "visible", maxRows = nrow(df)) |>
+          rhandsontable::hot_context_menu(allowRowEdit = FALSE, allowColEdit = FALSE, allowComments = FALSE, allowCustomBorders = FALSE) |>
+          rhandsontable::hot_col("accnr", readOnly = TRUE) |>
+          rhandsontable::hot_col("provid", renderer = rhot_renderer_validate_provid_gray_bg_on_read_only) |>
+          rhandsontable::hot_col(which(colnames(df) != "provid"), renderer = rhot_renderer_gray_bg_on_read_only) |>
+          rhandsontable::hot_row(which(selected_accnrs() == ""), readOnly = TRUE) |>
+          rhot_set_visual_colheaders(provid_table_cols_pretty[match(cols, provid_table_cols)]) |>
+          rhot_disable_context_menu()
       })
     }
 

@@ -154,10 +154,11 @@ mod_biologdata_server <- function(id, selected_accnrs, biologdata_table) {
 
       output$details_table <- rhandsontable::renderRHandsontable({
         hot <- rhandsontable::rhandsontable(df, rowHeaders = NULL, overflow = "visible", maxRows = nrow(df)) |>
-        rhandsontable::hot_context_menu(allowRowEdit = FALSE, allowColEdit = FALSE, allowComments = FALSE, allowCustomBorders = FALSE) |>
-        rhandsontable::hot_col("accnr", renderer = rhot_renderer_validate_accnr) |>
-        rhandsontable::hot_col(which(colnames(df) != "accnr"), renderer = rhot_renderer_gray_bg_on_read_only) |>
-        rhot_set_visual_colheaders(esbaser::get_biologdata_colnames(pretty = TRUE))
+          rhandsontable::hot_context_menu(allowRowEdit = FALSE, allowColEdit = FALSE, allowComments = FALSE, allowCustomBorders = FALSE) |>
+          rhandsontable::hot_col("accnr", renderer = rhot_renderer_validate_accnr) |>
+          rhandsontable::hot_col(which(colnames(df) != "accnr"), renderer = rhot_renderer_gray_bg_on_read_only) |>
+          rhot_set_visual_colheaders(esbaser::get_biologdata_colnames(pretty = TRUE)) |>
+          rhot_disable_context_menu()
 
         for (row in seq_len(nrow(df))) {
           if (df[row, "accnr"] == "") {
