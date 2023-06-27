@@ -21,6 +21,8 @@ mod_provlista_server <- function(id, selected_accnrs, provlista_table) {
 
     # ---------- DEFAULT VALUES ----------
     provlista_table$dfs <- list()
+    provlista_table$homogenats <- list()
+    provlista_table$analyslabs <- list()
     provs(c("prov1"))
 
     # ---------- FUNCTIONS ----------
@@ -40,6 +42,8 @@ mod_provlista_server <- function(id, selected_accnrs, provlista_table) {
         aces = "",
         delvikt = as.numeric(NA),
         provvikt = as.numeric(NA))
+      provlista_table$homogenats[[name]] <- FALSE
+      provlista_table$analyslabs[[name]] <- ""
     }
 
     handle_provid_table_change <- function(name, new_table) {
@@ -52,7 +56,6 @@ mod_provlista_server <- function(id, selected_accnrs, provlista_table) {
         return()
       }
       changed <- FALSE
-
 
       # Clear rows with changed accnrs
       rows_accnr_changed <- provlista_table$dfs[[name]]["accnr"] != new_table["accnr"]
@@ -185,7 +188,7 @@ mod_provlista_server <- function(id, selected_accnrs, provlista_table) {
     }
 
     add_new_prov_section_observe_events <- function(name) {
-    # Once the vavnad select exists, update it with the options from esbase
+      # Once the vavnad select exists, update it with the options from esbase
       shiny::observeEvent(input[[prov_io(name, "vavnad")]], {
         update_select_inputs_with_stodlistor(name)
       }, once = TRUE)
@@ -214,8 +217,16 @@ mod_provlista_server <- function(id, selected_accnrs, provlista_table) {
         handle_provid_table_change(name, new_table)
       })
 
+      o5 <- shiny::observeEvent(input[[prov_io(name, "homogenat")]], {
+        provlista_table$homogenats[[name]] <- input[[prov_io(name, "homogenat")]]
+      })
+
+      o6 <- shiny::observeEvent(input[[prov_io(name, "analyslab")]], {
+        provlista_table$analyslabs[[name]] <- input[[prov_io(name, "analyslab")]]
+      })
+
       # Save observe events so that they can be deleted later
-      provs_observe_events[[name]] <- c(o1, o2, o3, o4)
+      provs_observe_events[[name]] <- c(o1, o2, o3, o4, o5, o6)
     }
 
     update_select_inputs_with_stodlistor <- function(name) {

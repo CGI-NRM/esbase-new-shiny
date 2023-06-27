@@ -1,6 +1,7 @@
 ---
-title: "Dynamic report"
-output: pdf_document
+output: 
+    pdf_document:
+        keep_tex: true
 classoption: 
   - landscape
   - a4paper
@@ -12,6 +13,8 @@ params:
     biologdata_colnames: NA
     provlistas: NA
     provlistas_colnames: NA
+    provlistas_homogenat: NA
+    provlistas_analyslab: NA
 header-includes:
   - \usepackage{booktabs}
   - \usepackage{longtable}
@@ -27,9 +30,20 @@ header-includes:
   - \usepackage[normalem]{ulem}
   - \usepackage{makecell}
   - \usepackage{xcolor}
+  - \usepackage{adjustbox}
+  - \usepackage{fancyhdr}
+  - \usepackage{datetime2}
 ---
 
+\pagestyle{fancyplain}
+\fancyfoot[C]{}
+\renewcommand\plainheadrulewidth{.4pt}
+\rhead{Genererad \today}
+\lhead{Provberedningsrapport}
+\rfoot{\hfill \thepage \hfill NRM}
+
 <!-- https://haozhu233.github.io/kableExtra/awesome_table_in_pdf.pdf -->
+
 
 ```{r, echo = FALSE, message = FALSE}
 options(knitr.kable.NA = "")
@@ -42,8 +56,9 @@ for (col in cn[cn != "accnr"]) {
 }
 
 knitr::kable(df, "latex", col.names = params$biologdata_colnames, linesep = "", booktabs = FALSE, caption = "Biologdata") |>
-    kableExtra::kable_styling(latex_options = c("striped", "hold_position", "scale_down"), position = "center") |>
-    kableExtra::row_spec(row = 0, angle = 45)
+    kableExtra::kable_styling(latex_options = c("striped", "hold_position"), position = "center") |>
+    kableExtra::row_spec(row = 0, angle = 45) |>
+    kableExtraExtra_fit_to_page(caption = TRUE)
 ```
 
 \newpage
@@ -58,19 +73,34 @@ df <- accnr
 cnames <- c("Acc.nr.")
 ccount <- c(1)
 
-# TODO: Load delvikt and ACES depending on provXXX parameter
+provid_table_cols <- c("accnr", "provid", "aces", "delvikt", "provvikt")
+provid_table_cols_pretty <- c("Acc.nr.", "ProvID", "ACES NR", "Delvikt (g)", "Provvikt (g)")
+
 for (n in names(params$provlistas)) {
-    df <- dplyr::bind_cols(df, params$provlistas[[n]] |> dplyr::select("provid", "provvikt"))
-    cnames <- c(cnames, "ProvID", "Provvikt (g)")
-    ccount <- c(ccount, 2)
+    cols <- c("provid")
+    if (params$provlistas_analyslab[[n]] == "ACES") {
+        cols <- c(cols, "aces")
+    }
+    if (params$provlistas_homogenat[[n]]) {
+        cols <- c(cols, "delvikt")
+    }
+    cols <- c(cols, "provvikt")
+
+    df <- dplyr::bind_cols(df, params$provlistas[[n]] |> dplyr::select(dplyr::all_of(cols)))
+
+    cnames <- c(cnames, provid_table_cols_pretty[match(cols, provid_table_cols)])
+    ccount <- c(ccount, length(cols))
 }
 
 names(ccount) <- c(" ", names(params$provlistas))
 
+# TODO: column_spec with min-width for provid
 knitr::kable(
              df, "latex", col.names = cnames,
              linesep = "", booktabs = FALSE, caption = "Provlista") |>
-    kableExtra::kable_styling(latex_options = c("striped", "hold_position", "full_width"), position = "center") |>
+    kableExtra::kable_styling(latex_options = c("striped", "hold_position"), position = "center") |>
     kableExtra::row_spec(row = 0, angle = 30) |>
-    kableExtra::add_header_above(ccount)
+    kableExtra::add_header_above(ccount) |>
+    kableExtra::column_spec(grep("provid", colnames(df)), width = "3cm") |>
+    kableExtraExtra_fit_to_page(caption = TRUE)
 ```

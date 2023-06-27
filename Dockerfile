@@ -17,7 +17,7 @@ RUN Rscript -e 'install.packages("remotes")' && \
 
 RUN Rscript -e 'print(3)' && \
     Rscript -e 'tinytex::install_tinytex()' && \
-    Rscript -e 'tinytex::tlmgr_install(c("booktabs", "multirow", "wrapfig", "float", "colortbl", "pdflscape", "tabu", "threeparttable", "threeparttablex", "ulem", "makecell", "xcolor", "trimspaces", "environ"))'
+    Rscript -e 'tinytex::tlmgr_install(c("booktabs", "multirow", "wrapfig", "float", "colortbl", "pdflscape", "tabu", "threeparttable", "threeparttablex", "ulem", "makecell", "xcolor", "trimspaces", "environ", "adjustbox", "fancyhdr", "datetime2"))'
 
 RUN Rscript -e 'remotes::install_github("cgi-nrm/esbaser")'
 

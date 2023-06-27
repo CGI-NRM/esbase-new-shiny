@@ -30,7 +30,9 @@ mod_provberedning_server <- function(id) {
   # Containing $df_db which is the table of the biologdata pulled from the db
   # and $df_override which contains mostly NAs, and then values where the user has changed/enetered in the table
   biologdata_table <- shiny::reactiveValues()
-  # Containing provlista_table$dfs which is a list where the keys are the names of the prov, and the values are the coresponding dataframe
+  # Containing provlista_table$dfs which is a list with prov-names as keys and the coresponding dataframe as values
+  #                and $homogenats which is a list with prov-names as keys and the coresponding logical values as values
+  #                and $analyslabs which is a list with prov-names as keys and the coresponding logical values as values
   provlista_table <- shiny::reactiveValues()
 
   shiny::moduleServer(id, function(input, output, session) {
@@ -40,7 +42,9 @@ mod_provberedning_server <- function(id) {
                      biologdata_override = biologdata_table$df_override,
                      biologdata_colnames = esbaser::get_biologdata_colnames(pretty = TRUE),
                      provlistas = provlista_table$dfs,
-                     provlistas_colnames = lapply(provlista_table$dfs, colnames)
+                     provlistas_colnames = lapply(provlista_table$dfs, colnames),
+                     provlistas_homogenat = provlista_table$homogenats,
+                     provlistas_analyslab = provlista_table$analyslabs
       )
     }
 

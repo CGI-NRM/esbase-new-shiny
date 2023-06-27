@@ -25,6 +25,8 @@ source("provlist_ui.R")
 source("rhandsontable_js.R")
 source("report.R")
 
+source("kableExtraExtra.R")
+
 ui <- shiny::fluidPage(
   shiny::includeCSS("www/style.css"),
   shiny::titlePanel("Esbase New"),
