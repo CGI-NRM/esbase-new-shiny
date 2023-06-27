@@ -7,6 +7,17 @@ rhot_set_visual_colheaders <- function(hot, colheaders) {
   ", data = colheaders)
 }
 
+rhot_disable_context_menu <- function(hot) {
+  htmlwidgets::onRender(hot, "
+    function(el, x, data) {
+      var hot = this.hot;
+      hot.addHook('beforeOnCellContextMenu', (e) => {
+        e.stopImmediatePropagation();
+      });
+    }
+  ")
+}
+
 rhot_renderer_gray_bg_on_read_only <- "
 function (instance, td, row, col, prop, value, cellProperties) {
   Handsontable.renderers.TextRenderer.apply(this, arguments);

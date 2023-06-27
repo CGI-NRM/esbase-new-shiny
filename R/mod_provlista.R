@@ -11,18 +11,18 @@ mod_provlista_ui <- function(id) {
   )
 }
 
-mod_provlista_server <- function(id, selected_accnrs) {
+mod_provlista_server <- function(id, selected_accnrs, provlista_table) {
   shiny::moduleServer(id, function(input, output, session) {
     # ---------- REACTIVE VARIABLES ----------
-    # Containing provid_table$dfs which is a list where the keys are the names of the prov, and the values are the coresponding dataframe
-    provid_table <- shiny::reactiveValues()
     # A vector of the names of all provs
     provs <- shiny::reactiveVal()
     # A list/reactiveValues where the keys hold vectors of all saved observeEvents, so that they can be deleted
     provs_observe_events <- shiny::reactiveValues()
 
     # ---------- DEFAULT VALUES ----------
-    provid_table$dfs <- list()
+    provlista_table$dfs <- list()
+    provlista_table$homogenats <- list()
+    provlista_table$analyslabs <- list()
     provs(c("prov1"))
 
     # ---------- FUNCTIONS ----------
@@ -36,16 +36,18 @@ mod_provlista_server <- function(id, selected_accnrs) {
 
     # Create a new provid_table dataframe with default/empty values and place in provid_table
     create_provid_table <- function(name) {
-      provid_table$dfs[[name]] <- data.frame(
+      provlista_table$dfs[[name]] <- data.frame(
         accnr = selected_accnrs(),
         provid = "",
         aces = "",
         delvikt = as.numeric(NA),
         provvikt = as.numeric(NA))
+      provlista_table$homogenats[[name]] <- FALSE
+      provlista_table$analyslabs[[name]] <- ""
     }
 
     handle_provid_table_change <- function(name, new_table) {
-      if (is.null(provid_table$dfs[[name]]) || nrow(new_table) != nrow(provid_table$dfs[[name]])) {
+      if (is.null(provlista_table$dfs[[name]]) || nrow(new_table) != nrow(provlista_table$dfs[[name]])) {
         shiny::showNotification(
           paste0(
             "Cannot add rows to this table. Add more rows under 'Biologdata' to increase the number of rows in this table"
@@ -54,17 +56,36 @@ mod_provlista_server <- function(id, selected_accnrs) {
         return()
       }
       changed <- FALSE
-      for (col in colnames(new_table)) {
-        cells_changed <- provid_table$dfs[[name]][col] != new_table[col]
-        cells_changed <- cells_changed | xor(is.na(provid_table$dfs[[name]][col]), is.na(new_table[col]))
+
+      # Clear rows with changed accnrs
+      rows_accnr_changed <- provlista_table$dfs[[name]]["accnr"] != new_table["accnr"]
+      rows_accnr_changed <- rows_accnr_changed | xor(is.na(provlista_table$dfs[[name]]["accnr"]), is.na(new_table["accnr"]))
+      if (any(rows_accnr_changed)) {
+        changed <- TRUE
+
+        provlista_table$dfs[[name]][rows_accnr_changed, ] <- data.frame(
+          accnr = new_table[rows_accnr_changed, "accnr"],
+          provid = "",
+          aces = "",
+          delvikt = as.numeric(NA),
+          provvikt = as.numeric(NA)
+        )
+      }
+
+      cn <- colnames(new_table)
+      for (col in cn[cn != "accnr"]) {
+        cells_changed <- provlista_table$dfs[[name]][col] != new_table[col]
+        cells_changed <- cells_changed | xor(is.na(provlista_table$dfs[[name]][col]), is.na(new_table[col]))
+        cells_changed <- cells_changed & !rows_accnr_changed
 
         rows <- which(cells_changed)
-        provid_table$dfs[[name]][rows, col] <- new_table[rows, col]
+        provlista_table$dfs[[name]][rows, col] <- new_table[rows, col]
 
-        if (length(rows)) {
+        if (length(rows) > 0) {
           changed <- TRUE
         }
       }
+
       if (changed) {
         render_provid_table(name)
       }
@@ -93,44 +114,43 @@ mod_provlista_server <- function(id, selected_accnrs) {
       }
       cols <- c(cols, "provvikt")
 
-      df <- provid_table$dfs[[name]][cols]
+      df <- provlista_table$dfs[[name]][cols]
 
       output[[prov_io(name, "provid_table")]] <- rhandsontable::renderRHandsontable({
-        hot <- rhandsontable::rhandsontable(df, rowHeaders = FALSE, overflow = "visible", maxRows = nrow(df)) |>
-        rhandsontable::hot_context_menu(allowRowEdit = FALSE, allowColEdit = FALSE, allowComments = FALSE, allowCustomBorders = FALSE) |>
-        rhandsontable::hot_col("accnr", readOnly = TRUE) |>
-        rhandsontable::hot_col("provid", renderer = rhot_renderer_validate_provid_gray_bg_on_read_only) |>
-        rhandsontable::hot_col(which(colnames(df) != "provid"), renderer = rhot_renderer_gray_bg_on_read_only) |>
-        rhandsontable::hot_row(which(selected_accnrs() == ""), readOnly = TRUE) |>
-        rhot_set_visual_colheaders(provid_table_cols_pretty[match(cols, provid_table_cols)])
-
-        hot
+        rhandsontable::rhandsontable(df, rowHeaders = FALSE, overflow = "visible", maxRows = nrow(df)) |>
+          rhandsontable::hot_context_menu(allowRowEdit = FALSE, allowColEdit = FALSE, allowComments = FALSE, allowCustomBorders = FALSE) |>
+          rhandsontable::hot_col("accnr", readOnly = TRUE) |>
+          rhandsontable::hot_col("provid", renderer = rhot_renderer_validate_provid_gray_bg_on_read_only) |>
+          rhandsontable::hot_col(which(colnames(df) != "provid"), renderer = rhot_renderer_gray_bg_on_read_only) |>
+          rhandsontable::hot_row(which(selected_accnrs() == ""), readOnly = TRUE) |>
+          rhot_set_visual_colheaders(provid_table_cols_pretty[match(cols, provid_table_cols)]) |>
+          rhot_disable_context_menu()
       })
     }
 
     klona_provid_fran_forsta <- function(name) {
-      if (!esbaser::provid_validate(provid_table$dfs[[name]][1, "provid"])) {
+      if (!esbaser::provid_validate(provlista_table$dfs[[name]][1, "provid"])) {
         shiny::showNotification(
           "Invalid or missing ProvID in first row. Please enter on the form 'Q2022-12345'",
           type = "warning")
         return()
       }
 
-      new_table <- provid_table$dfs[[name]]
-      new_table[selected_accnrs() != "", "provid"] <- provid_table$dfs[[name]][1, "provid"]
+      new_table <- provlista_table$dfs[[name]]
+      new_table[selected_accnrs() != "", "provid"] <- provlista_table$dfs[[name]][1, "provid"]
       handle_provid_table_change(name, new_table)
     }
 
     sekvens_provid_fran_forsta <- function(name) {
-      if (!esbaser::provid_validate(provid_table$dfs[[name]][1, "provid"])) {
+      if (!esbaser::provid_validate(provlista_table$dfs[[name]][1, "provid"])) {
         shiny::showNotification(
           "Invalid or missing ProvID in first row. Please enter on the form 'Q2022-12345'",
           type = "warning")
         return()
       }
 
-      parsed <- esbaser::provid_parse(provid_table$dfs[[name]][1, "provid"])
-      new_table <- provid_table$dfs[[name]]
+      parsed <- esbaser::provid_parse(provlista_table$dfs[[name]][1, "provid"])
+      new_table <- provlista_table$dfs[[name]]
       new_table[selected_accnrs() != "", "provid"] <- unlist(
         lapply(
           seq_len(nrow(new_table))[selected_accnrs() != ""],
@@ -168,7 +188,7 @@ mod_provlista_server <- function(id, selected_accnrs) {
     }
 
     add_new_prov_section_observe_events <- function(name) {
-    # Once the vavnad select exists, update it with the options from esbase
+      # Once the vavnad select exists, update it with the options from esbase
       shiny::observeEvent(input[[prov_io(name, "vavnad")]], {
         update_select_inputs_with_stodlistor(name)
       }, once = TRUE)
@@ -197,8 +217,16 @@ mod_provlista_server <- function(id, selected_accnrs) {
         handle_provid_table_change(name, new_table)
       })
 
+      o5 <- shiny::observeEvent(input[[prov_io(name, "homogenat")]], {
+        provlista_table$homogenats[[name]] <- input[[prov_io(name, "homogenat")]]
+      })
+
+      o6 <- shiny::observeEvent(input[[prov_io(name, "analyslab")]], {
+        provlista_table$analyslabs[[name]] <- input[[prov_io(name, "analyslab")]]
+      })
+
       # Save observe events so that they can be deleted later
-      provs_observe_events[[name]] <- c(o1, o2, o3, o4)
+      provs_observe_events[[name]] <- c(o1, o2, o3, o4, o5, o6)
     }
 
     update_select_inputs_with_stodlistor <- function(name) {
@@ -252,7 +280,7 @@ mod_provlista_server <- function(id, selected_accnrs) {
     shiny::observeEvent(selected_accnrs(), {
       # TODO: If accnr changed, remove row
       # TODO: If length(selected_accnrs()) change, do not clear all data, only add the necessary new rows
-      current_dfs <- provid_table$dfs
+      current_dfs <- provlista_table$dfs
       for (name in provs()) {
         if (is.null(current_dfs[[name]]) || nrow(current_dfs[[name]]) != length(selected_accnrs())) {
           create_provid_table(name)
