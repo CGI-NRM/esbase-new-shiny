@@ -232,10 +232,11 @@ mod_provlista_server <- function(id, selected_accnrs, provlista_table) {
     update_select_inputs_with_stodlistor <- function(name) {
       # Update vävnad choices from stödlista
       material_type <- esbaser::get_options_material_type()
-      material_type_vector <- material_type[, "id", drop = TRUE]
-      names(material_type_vector) <- material_type[, "representation", drop = TRUE]
+      session$userData$stodlistor$material_type_vector <- material_type[, "id", drop = TRUE]
+      names(session$userData$stodlistor$material_type_vector) <- material_type[, "representation", drop = TRUE]
+
       shiny::updateSelectizeInput(session, prov_io(name, "vavnad"),
-                                  choices = material_type_vector,
+                                  choices = session$userData$stodlistor$material_type_vector,
                                   selected = NA, server = TRUE)
     }
 

@@ -100,23 +100,23 @@ mod_biologdata_server <- function(id, selected_accnrs, biologdata_table) {
     update_select_inputs_with_stodlistor <- function() {
       # Update lokaler choices from stödlista
       lokaler <- esbaser::get_options_lokaler()
-      lokaler_vector <- lokaler[, "id", drop = TRUE]
-      names(lokaler_vector) <- lokaler[, "representation", drop = TRUE]
-      shiny::updateSelectizeInput(session, "lokal", choices = lokaler_vector,
+      session$userData$stodlistor$lokaler_vector <- lokaler[, "id", drop = TRUE]
+      names(session$userData$stodlistor$lokaler_vector) <- lokaler[, "representation", drop = TRUE]
+      shiny::updateSelectizeInput(session, "lokal", choices = session$userData$stodlistor$lokaler_vector,
                                   selected = NA, server = TRUE)
 
       # Update arter choices from stödlista
       species <- esbaser::get_options_species()
-      species_vector <- species[, "id", drop = TRUE]
-      names(species_vector) <- species[, "representation", drop = TRUE]
-      shiny::updateSelectizeInput(session, "artnamn", choices = species_vector,
+      session$userData$stodlistor$species_vector <- species[, "id", drop = TRUE]
+      names(session$userData$stodlistor$species_vector) <- species[, "representation", drop = TRUE]
+      shiny::updateSelectizeInput(session, "artnamn", choices = session$userData$stodlistor$species_vector,
                                   selected = NA, server = TRUE)
 
       # Update project choices from stödlista
       projects <- esbaser::get_options_project()
-      projects_vector <- projects[, "id", drop = TRUE]
-      names(projects_vector) <- projects[, "representation", drop = TRUE]
-      shiny::updateSelectizeInput(session, "projekt", choices = projects_vector,
+      session$userData$stodlistor$projects_vector <- projects[, "id", drop = TRUE]
+      names(session$userData$stodlistor$projects_vector) <- projects[, "representation", drop = TRUE]
+      shiny::updateSelectizeInput(session, "projekt", choices = session$userData$stodlistor$projects_vector,
                                   selected = NA, server = TRUE)
     }
 
