@@ -9,8 +9,7 @@ report_content <- function(
   biologdata_colnames,
   provlistas,
   provlistas_colnames,
-  provlistas_homogenat,
-  provlistas_analyslab
+  provlistas_metas
 ) {
   # Place in tempdir since we don't have write access when deployed
   temp_report <- file.path(tempdir(), "report.Rmd")
@@ -22,8 +21,7 @@ report_content <- function(
     biologdata_colnames = biologdata_colnames,
     provlistas = provlistas,
     provlistas_colnames = provlistas_colnames,
-    provlistas_homogenat = provlistas_homogenat,
-    provlistas_analyslab = provlistas_analyslab
+    provlistas_metas = provlistas_metas
   )
 
   # Knit the document, passing in the `params` list, and eval it in a child of the gloabl environment

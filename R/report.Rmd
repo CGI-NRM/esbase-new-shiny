@@ -13,8 +13,7 @@ params:
     biologdata_colnames: NA
     provlistas: NA
     provlistas_colnames: NA
-    provlistas_homogenat: NA
-    provlistas_analyslab: NA
+    provlistas_metas: NA
 header-includes:
   - \usepackage{booktabs}
   - \usepackage{longtable}
@@ -78,10 +77,10 @@ provid_table_cols_pretty <- c("Acc.nr.", "ProvID", "ACES NR", "Delvikt (g)", "Pr
 
 for (n in names(params$provlistas)) {
     cols <- c("provid")
-    if (params$provlistas_analyslab[[n]] == "ACES") {
+    if (params$provlistas_metas[n, "analyslab"] == "ACES") {
         cols <- c(cols, "aces")
     }
-    if (params$provlistas_homogenat[[n]]) {
+    if (params$provlistas_metas[n, "homogenat"]) {
         cols <- c(cols, "delvikt")
     }
     cols <- c(cols, "provvikt")
@@ -92,7 +91,22 @@ for (n in names(params$provlistas)) {
     ccount <- c(ccount, length(cols))
 }
 
-names(ccount) <- c(" ", names(params$provlistas))
+ccount_provname <- ccount
+ccount_analystyp <- ccount
+ccount_analyslab <- ccount
+ccount_analytiker <- ccount
+ccount_provtagningsinst <- ccount
+ccount_vavnad <- ccount
+
+metas <- params$provlistas_metas
+metas[metas == "" | is.na(metas)] <- " "
+
+names(ccount_provname) <- c(" ", names(params$provlistas))
+names(ccount_analystyp) <- c(" ", metas[, "analystyp", drop = TRUE])
+names(ccount_analyslab) <- c(" ", metas[, "analyslab", drop = TRUE])
+names(ccount_analytiker) <- c(" ", metas[, "analytiker", drop = TRUE])
+names(ccount_provtagningsinst) <- c(" ", metas[, "provtagningsinst", drop = TRUE])
+names(ccount_vavnad) <- c(" ", metas[, "vavnad", drop = TRUE])
 
 # TODO: column_spec with min-width for provid
 knitr::kable(
@@ -100,7 +114,12 @@ knitr::kable(
              linesep = "", booktabs = FALSE, caption = "Provlista") |>
     kableExtra::kable_styling(latex_options = c("striped", "hold_position"), position = "center") |>
     kableExtra::row_spec(row = 0, angle = 30) |>
-    kableExtra::add_header_above(ccount) |>
+    kableExtra::add_header_above(ccount_provtagningsinst) |>
+    kableExtra::add_header_above(ccount_vavnad) |>
+    kableExtra::add_header_above(ccount_analytiker) |>
+    kableExtra::add_header_above(ccount_analyslab) |>
+    kableExtra::add_header_above(ccount_analystyp) |>
+    kableExtra::add_header_above(ccount_provname) |>
     kableExtra::column_spec(grep("provid", colnames(df)), width = "3cm") |>
     kableExtraExtra_fit_to_page(caption = TRUE)
 ```

@@ -33,8 +33,9 @@ mod_provberedning_server <- function(id) {
   biologdata_table <- shiny::reactiveValues()
 
   # Containing provlista_table$dfs which is a list with prov-names as keys and the coresponding dataframe as values
-  #                and $homogenats which is a list with prov-names as keys and the coresponding logical values as values
-  #                and $analyslabs which is a list with prov-names as keys and the coresponding logical values as values
+  #                     and $metas which is a dataframe where the
+  #                         rowsnames are prov-names, and the
+  #                         columns are 'homogenat analyslab analystyp analytiker provtagningsinst vavnads'
   provlista_table <- shiny::reactiveValues()
 
   # Containing $material_type_vector
@@ -52,8 +53,7 @@ mod_provberedning_server <- function(id) {
                      biologdata_colnames = esbaser::get_biologdata_colnames(pretty = TRUE),
                      provlistas = provlista_table$dfs,
                      provlistas_colnames = lapply(provlista_table$dfs, colnames),
-                     provlistas_homogenat = provlista_table$homogenats,
-                     provlistas_analyslab = provlista_table$analyslabs
+                     provlistas_metas = provlista_table$metas
       )
     }
 

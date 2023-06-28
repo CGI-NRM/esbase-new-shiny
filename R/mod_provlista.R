@@ -21,8 +21,14 @@ mod_provlista_server <- function(id, selected_accnrs, provlista_table) {
 
     # ---------- DEFAULT VALUES ----------
     provlista_table$dfs <- list()
-    provlista_table$homogenats <- list()
-    provlista_table$analyslabs <- list()
+    provlista_table$metas <- data.frame(
+      homogenat = logical(0),
+      analyslab = character(0),
+      analystyp = character(0),
+      analytiker = character(0),
+      provtagningsinst = character(0),
+      vavnad = character(0)
+    )
     provs(c("prov1"))
 
     # ---------- FUNCTIONS ----------
@@ -42,8 +48,19 @@ mod_provlista_server <- function(id, selected_accnrs, provlista_table) {
         aces = "",
         delvikt = as.numeric(NA),
         provvikt = as.numeric(NA))
-      provlista_table$homogenats[[name]] <- FALSE
-      provlista_table$analyslabs[[name]] <- ""
+
+      provlista_table$metas[name, "vavnad"] <- ifelse(is.null(input[[prov_io(name, "vavnad")]]),
+                                                      "", input[[prov_io(name, "vavnad")]])
+      provlista_table$metas[name, "provtagningsinst"] <- ifelse(is.null(input[[prov_io(name, "provtagningsinst")]]),
+                                                                "", input[[prov_io(name, "provtagningsinst")]])
+      provlista_table$metas[name, "analytiker"] <- ifelse(is.null(input[[prov_io(name, "analytiker")]]),
+                                                          "", input[[prov_io(name, "analytiker")]])
+      provlista_table$metas[name, "analystyp"] <- ifelse(is.null(input[[prov_io(name, "analystyp")]]),
+                                                         "", input[[prov_io(name, "analystyp")]])
+      provlista_table$metas[name, "analyslab"] <- ifelse(is.null(input[[prov_io(name, "analyslab")]]),
+                                                         "", input[[prov_io(name, "analyslab")]])
+      provlista_table$metas[name, "homogenat"] <- ifelse(is.null(input[[prov_io(name, "homogenat")]]),
+                                                         FALSE, input[[prov_io(name, "homogenat")]])
     }
 
     handle_provid_table_change <- function(name, new_table) {
@@ -218,15 +235,36 @@ mod_provlista_server <- function(id, selected_accnrs, provlista_table) {
       })
 
       o5 <- shiny::observeEvent(input[[prov_io(name, "homogenat")]], {
-        provlista_table$homogenats[[name]] <- input[[prov_io(name, "homogenat")]]
+        provlista_table$metas[name, "homogenat"] <- input[[prov_io(name, "homogenat")]]
       })
 
       o6 <- shiny::observeEvent(input[[prov_io(name, "analyslab")]], {
-        provlista_table$analyslabs[[name]] <- input[[prov_io(name, "analyslab")]]
+        provlista_table$metas[name, "analyslab"] <- input[[prov_io(name, "analyslab")]]
+      })
+
+      o7 <- shiny::observeEvent(input[[prov_io(name, "analystyp")]], {
+        provlista_table$metas[name, "analystyp"] <- input[[prov_io(name, "analystyp")]]
+      })
+
+      o8 <- shiny::observeEvent(input[[prov_io(name, "analytiker")]], {
+        provlista_table$metas[name, "analytiker"] <- input[[prov_io(name, "analytiker")]]
+      })
+
+      o9 <- shiny::observeEvent(input[[prov_io(name, "provtagningsinst")]], {
+        provlista_table$metas[name, "provtagningsinst"] <- input[[prov_io(name, "provtagningsinst")]]
+      })
+
+      o10 <- shiny::observeEvent(input[[prov_io(name, "vavnad")]], {
+        shiny::req(session$userData$stodlistor$material_type_vector)
+        shiny::req(input[[prov_io(name, "vavnad")]])
+
+        provlista_table$metas[name, "vavnad"] <- names(
+          session$userData$stodlistor$material_type_vector
+        )[session$userData$stodlistor$material_type_vector == input[[prov_io(name, "vavnad")]]]
       })
 
       # Save observe events so that they can be deleted later
-      provs_observe_events[[name]] <- c(o1, o2, o3, o4, o5, o6)
+      provs_observe_events[[name]] <- c(o1, o2, o3, o4, o5, o6, o7, o8, o9, o10)
     }
 
     update_select_inputs_with_stodlistor <- function(name) {
