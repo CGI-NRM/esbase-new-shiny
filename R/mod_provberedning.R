@@ -37,6 +37,13 @@ mod_provberedning_server <- function(id) {
   #                and $analyslabs which is a list with prov-names as keys and the coresponding logical values as values
   provlista_table <- shiny::reactiveValues()
 
+  # Containing $material_type_vector
+  #            $species_vector
+  #            $lokaler_vector
+  #            $projects_vector
+  #            which all are named vectors with ids and representations for the respective help-table
+  # session$userData$stodlistor
+
   shiny::moduleServer(id, function(input, output, session) {
     content_wrapper <- function(file) {
       report_content(file = file,
