@@ -27,9 +27,11 @@ mod_provberedning_ui <- function(id) {
 mod_provberedning_server <- function(id) {
   # A vector of the currently selected accnrs as specified in the table in the biologdata tab
   selected_accnrs <- shiny::reactiveVal()
+
   # Containing $df_db which is the table of the biologdata pulled from the db
   # and $df_override which contains mostly NAs, and then values where the user has changed/enetered in the table
   biologdata_table <- shiny::reactiveValues()
+
   # Containing provlista_table$dfs which is a list with prov-names as keys and the coresponding dataframe as values
   #                and $homogenats which is a list with prov-names as keys and the coresponding logical values as values
   #                and $analyslabs which is a list with prov-names as keys and the coresponding logical values as values
