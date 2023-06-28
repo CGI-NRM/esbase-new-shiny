@@ -3,11 +3,14 @@ mod_provlista_ui <- function(id) {
 
   shiny::div(id = ns("provlista"),
              shiny::h3("Provlista"),
-             provlist_ui(create_prov_ns("prov1", ns), "prov1"),
-             shiny::div(id = ns("after_provs")),
              shiny::actionButton(inputId = ns("lagg_till_prov"), label = "Lägg till prov"),
+             shiny::actionButton(inputId = ns("set_limniska"), label = "Set Limniska Programmet Prover", disabled = TRUE),
              shiny::br(),
-             shiny::actionButton(inputId = ns("set_limniska"), label = "Set Limniska Programmet Prover", disabled = TRUE)
+             shiny::br(),
+             shiny::tabsetPanel(
+               id = ns("prov_tabset_panel"),
+               provlist_ui(create_prov_ns("prov1", ns), "prov1")
+             )
   )
 }
 
@@ -195,7 +198,7 @@ mod_provlista_server <- function(id, selected_accnrs, provlista_table) {
 
       prov_ns_current <- create_prov_ns(name, session$ns)
 
-      shiny::insertUI(paste0("#", session$ns("after_provs")), where = "beforeBegin", provlist_ui(prov_ns_current, name))
+      shiny::insertTab("prov_tabset_panel", provlist_ui(prov_ns_current, name))
 
       provs(c(provs(), name))
 

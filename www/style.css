@@ -4,8 +4,6 @@
 
 .checkbox {
     line-height: 34px;
-    margin-bottom: 15px;
-    transform: translateY(-50%);
 }
 
 .checkbox label {
