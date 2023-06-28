@@ -14,6 +14,13 @@ mod_provberedning_ui <- function(id) {
                             icon = shiny::icon("pen"))
                         )
              ),
+             shiny::selectizeInput(
+               inputId = ns("projekt"),
+               label = "Projekt /Program",
+               choices = c(""),
+               options = list(placeholder = "Projekt"),
+               width = "100%"
+             ),
 
              shiny::tabsetPanel(
                type = "tabs",
@@ -46,21 +53,38 @@ mod_provberedning_server <- function(id) {
   # session$userData$stodlistor
 
   shiny::moduleServer(id, function(input, output, session) {
-    content_wrapper <- function(file) {
-      report_content(file = file,
-                     biologdata = biologdata_table$df_db,
-                     biologdata_override = biologdata_table$df_override,
-                     biologdata_colnames = esbaser::get_biologdata_colnames(pretty = TRUE),
-                     provlistas = provlista_table$dfs,
-                     provlistas_colnames = lapply(provlista_table$dfs, colnames),
-                     provlistas_metas = provlista_table$metas
+
+    # ---------- FUNCTIONS ----------
+    update_select_inputs_with_stodlistor <- function() {
+      # Update project choices from stödlista
+      projects <- esbaser::get_options_project()
+      session$userData$stodlistor$projects_vector <- projects[, "id", drop = TRUE]
+      names(session$userData$stodlistor$projects_vector) <- projects[, "representation", drop = TRUE]
+      shiny::updateSelectizeInput(session, "projekt", choices = session$userData$stodlistor$projects_vector,
+                                  selected = NA, server = TRUE)
+    }
+
+    create_download_handler <- function() {
+      content_wrapper <- function(file) {
+        report_content(file = file,
+                       biologdata = biologdata_table$df_db,
+                       biologdata_override = biologdata_table$df_override,
+                       biologdata_colnames = esbaser::get_biologdata_colnames(pretty = TRUE),
+                       provlistas = provlista_table$dfs,
+                       provlistas_colnames = lapply(provlista_table$dfs, colnames),
+                       provlistas_metas = provlista_table$metas
+        )
+      }
+
+      output$download_report <- shiny::downloadHandler(
+        filename = "report.pdf",
+        content = content_wrapper
       )
     }
 
-    output$download_report <- shiny::downloadHandler(
-      filename = "report.pdf",
-      content = content_wrapper
-    )
+    # ---------- ONE-TIME SETUP ----------
+    update_select_inputs_with_stodlistor()
+    create_download_handler()
 
     mod_biologdata_server("biologdata", selected_accnrs, biologdata_table)
     mod_provlista_server("provlista", selected_accnrs, provlista_table)

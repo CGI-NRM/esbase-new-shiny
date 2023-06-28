@@ -43,14 +43,7 @@ mod_biologdata_ui <- function(id) {
                                              ),
                                              title = "ÅÅÅÅ-MM-DD",
                                              placement = "top"
-                                           ),
-                                           shiny::selectizeInput(
-                                             inputId = ns("projekt"),
-                                             label = "Projekt /Program",
-                                             choices = c(""),
-                                             options = list(placeholder = "Projekt"),
-                                             width = "100%"
-                                           ),
+                                           )
                              ),
                              shiny::column(4,
                                            shiny::textInput(
@@ -110,13 +103,6 @@ mod_biologdata_server <- function(id, selected_accnrs, biologdata_table) {
       session$userData$stodlistor$species_vector <- species[, "id", drop = TRUE]
       names(session$userData$stodlistor$species_vector) <- species[, "representation", drop = TRUE]
       shiny::updateSelectizeInput(session, "artnamn", choices = session$userData$stodlistor$species_vector,
-                                  selected = NA, server = TRUE)
-
-      # Update project choices from stödlista
-      projects <- esbaser::get_options_project()
-      session$userData$stodlistor$projects_vector <- projects[, "id", drop = TRUE]
-      names(session$userData$stodlistor$projects_vector) <- projects[, "representation", drop = TRUE]
-      shiny::updateSelectizeInput(session, "projekt", choices = session$userData$stodlistor$projects_vector,
                                   selected = NA, server = TRUE)
     }
 
