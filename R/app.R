@@ -30,8 +30,8 @@ source("kableExtraExtra.R")
 ui <- shiny::fluidPage(
   shiny::includeCSS("www/style.css"),
   shiny::titlePanel("Esbase New"),
-  mod_provberedning_ui("provberedning"),
-  shiny::div(style = "height: 100vh")
+  mod_provberedning_ui("provberedning")
+#  shiny::div(style = "height: 100vh")
 )
 
 server <- function(input, output, session) {
