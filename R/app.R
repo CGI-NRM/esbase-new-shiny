@@ -12,7 +12,11 @@ if (any(installed_packages == FALSE)) {
 # Commented out to force the use of package::function to make it clearer where functions come from
 # invisible(lapply(packages, library, character.only = TRUE))
 
+# Must be loaded to be included in app
 library(shinyBS)
+
+library(tibble)
+library(dplyr)
 
 remotes::install_github("cgi-nrm/esbaser")
 
