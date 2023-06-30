@@ -39,6 +39,7 @@ ui <- shiny::fluidPage(
 )
 
 server <- function(input, output, session) {
+  # ---------- MODULE SERVERS ----------
   mod_provberedning_server("provberedning")
 }
 
