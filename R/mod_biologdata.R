@@ -21,15 +21,6 @@ mod_biologdata_ui <- function(id) {
                                                options = list(placeholder = "Artnamn"),
                                                width = "100%"
                                              )
-                               ),
-                               shiny::column(6,
-                                             shiny::numericInput(
-                                               inputId = ns("antal"),
-                                               label = "Antal ind.",
-                                               value = 12,
-                                               min = 1,
-                                               step = 1
-                                             )
                                )
                              )
                              ),
@@ -107,21 +98,19 @@ mod_biologdata_server <- function(id, selected_accnrs, biologdata_table) {
     }
 
     update_biologdata_table_rowcount <- function() {
-      if (is.na(input$antal) || input$antal < 0) {
-        return()
-      }
-
-      if (NROW(biologdata_table$df_db) < input$antal) {
-        new_rows <- dplyr::bind_rows(lapply(rep("", input$antal - NROW(biologdata_table$df_db)), esbaser::get_accnr_biologdata))
+    print("213")
+      if (NROW(biologdata_table$df_db) < length(selected_accnrs())) {
+        new_rows <- dplyr::bind_rows(lapply(rep("", length(selected_accnrs()) - NROW(biologdata_table$df_db)), esbaser::get_accnr_biologdata))
         biologdata_table$df_db <- rbind(biologdata_table$df_db, new_rows)
         biologdata_table$df_override <- rbind(biologdata_table$df_override, new_rows)
-      } else {
-        biologdata_table$df_db <- biologdata_table$df_db[1:input$antal, ]
-        biologdata_table$df_override <- biologdata_table$df_override[1:input$antal, ]
+      } else if (NROW(biologdata_table$df_db) > length(selected_accnrs())) {
+        biologdata_table$df_db <- biologdata_table$df_db[seq_len(length(selected_accnrs())), ]
+        biologdata_table$df_override <- biologdata_table$df_override[seq_len(length(selected_accnrs())), ]
       }
 
-      selected_accnrs(biologdata_table$df_db[, "accnr"])
+      #selected_accnrs(biologdata_table$df_db[, "accnr"])
     }
+
 
     render_details_table <- function() {
       shiny::req(shiny::isolate(biologdata_table$df_db))
@@ -141,7 +130,7 @@ mod_biologdata_server <- function(id, selected_accnrs, biologdata_table) {
       output$details_table <- rhandsontable::renderRHandsontable({
         hot <- rhandsontable::rhandsontable(df, rowHeaders = NULL, overflow = "visible", maxRows = nrow(df)) |>
           rhandsontable::hot_context_menu(allowRowEdit = FALSE, allowColEdit = FALSE, allowComments = FALSE, allowCustomBorders = FALSE) |>
-          rhandsontable::hot_col("accnr", renderer = rhot_renderer_validate_accnr) |>
+          rhandsontable::hot_col("accnr", renderer = rhot_renderer_validate_accnr, readOnly = TRUE) |>
           rhandsontable::hot_col(which(colnames(df) != "accnr"), renderer = rhot_renderer_gray_bg_on_read_only) |>
           rhot_set_visual_colheaders(esbaser::get_biologdata_colnames(pretty = TRUE)) |>
           rhot_disable_context_menu()
@@ -158,7 +147,25 @@ mod_biologdata_server <- function(id, selected_accnrs, biologdata_table) {
       })
     }
 
+    handle_changed_accnrs <- function() {
+      # TODO: This is quite an ugly hack for the meeting
+      update_biologdata_table_rowcount()
+      df <- shiny::isolate(biologdata_table$df_db)
+      # Render user overrides
+
+      cn <- colnames(biologdata_table$df_db)
+      for (col in cn[cn != "accnr"]) {
+        rows <- !is.na(biologdata_table$df_override[, col, drop = TRUE])
+        df[rows, col] <- biologdata_table$df_override[rows, col]
+      }
+
+      df[, "accnr"] <- selected_accnrs()
+
+      handle_biologdata_table_update(df)
+    }
+
     handle_biologdata_table_update <- function(new_table) {
+    # TODO: This should repond to selected accnrs instead
       if (nrow(new_table) != nrow(biologdata_table$df_db) || nrow(new_table) != nrow(biologdata_table$df_override)) {
         shiny::showNotification(
           paste0(
@@ -223,44 +230,17 @@ mod_biologdata_server <- function(id, selected_accnrs, biologdata_table) {
       }
     }
 
-    sekvens_accnr_fran_forsta <- function() {
-      if (!esbaser::accnr_validate(biologdata_table$df_db[1, "accnr"])) {
-        shiny::showNotification(
-          "Invalid or missing AccNR in first row. Please enter on the form 'A2022/12345' or 'A202212345'",
-          type = "warning")
-        return()
-      }
-
-      parsed <- esbaser::accnr_parse(biologdata_table$df_db[1, "accnr"])
-      new_table <- biologdata_table$df_db
-      new_table[, "accnr"] <- unlist(
-        lapply(
-          seq_len(nrow(new_table)),
-          function(i) {
-            esbaser::accnr_sprint(esbaser::accnr_add(parsed, i - 1))
-          }
-        )
-      )
-
-      handle_biologdata_table_update(new_table)
-    }
-
     # ---------- ONE-TIME SETUP ----------
     update_select_inputs_with_stodlistor()
 
     # ---------- OBSERVE EVENTS ----------
-    shiny::observeEvent(input$antal, {
-      update_biologdata_table_rowcount()
-      render_details_table()
-    })
-
     shiny::observeEvent(input$details_table, {
       new_table <- rhandsontable::hot_to_r(input$details_table)
       handle_biologdata_table_update(new_table)
     })
 
-    shiny::observeEvent(input$sekvens_accnr_fran_forsta, {
-      sekvens_accnr_fran_forsta()
+    shiny::observeEvent(selected_accnrs(), {
+      handle_changed_accnrs()
     })
   })
 }
