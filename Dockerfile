@@ -4,11 +4,13 @@ EXPOSE 3838
 
 RUN Rscript -e 'install.packages("remotes")' && \
     Rscript -e 'remotes::install_version("shinyBS", upgrade="never", version="0.61.1")' && \
+    Rscript -e 'remotes::install_version("shinyjs", upgrade="never", version="2.1.0")' && \
     Rscript -e 'remotes::install_version("DT", upgrade="never", version="0.28")' && \
     Rscript -e 'remotes::install_version("rhandsontable", upgrade="never", version="0.3.8")' && \
     Rscript -e 'remotes::install_version("tinytex", upgrade="never", version="0.45")' && \
     Rscript -e 'remotes::install_version("knitr", upgrade="never", version="1.43")' && \
-    Rscript -e 'remotes::install_version("kableExtra", upgrade="never", version="1.3.4")'
+    Rscript -e 'remotes::install_version("kableExtra", upgrade="never", version="1.3.4")' && \
+    Rscript -e 'remotes::install_version("logging", upgrade="never", version="0.10.108")'
 
 # shiny-verse includes the tidyverse which includes tibble,
 #    Rscript -e 'remotes::install_version("tibble", upgrade="never", version="3.2.1")' && \

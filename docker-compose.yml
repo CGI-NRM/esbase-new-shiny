@@ -11,3 +11,5 @@ services:
         #  - type: bind
         # source: /home/elias/code/nrm/esbase-new-shiny/R
         #target: /R
+    extra_hosts:
+      - "host.docker.internal:host-gateway"

@@ -54,7 +54,7 @@ mod_provberedning_ui <- function(id) {
              )
 }
 
-mod_provberedning_server <- function(id) {
+mod_provberedning_server <- function(id, conn) {
   # A vector of the currently selected accnrs as specified in the table in the biologdata tab
   selected_accnrs <- shiny::reactiveVal()
 
@@ -62,7 +62,7 @@ mod_provberedning_server <- function(id) {
   # and $df_override which contains mostly NAs, and then values where the user has changed/enetered in the table
   biologdata_table <- shiny::reactiveValues()
 
-  # Containing $df_db which is the accession data gathered from the db
+  # Containing $db which is a tibble of the accession data gathered from the db
   accession_data_table <- shiny::reactiveValues()
 
   # Containing provlista_table$dfs which is a list with prov-names as keys and the coresponding dataframe as values
@@ -79,9 +79,11 @@ mod_provberedning_server <- function(id) {
   # session$userData$stodlistor
 
   shiny::moduleServer(id, function(input, output, session) {
+    loginfo("mod_provberedning_server.R: module server start")
 
     # ---------- FUNCTIONS ----------
     update_select_inputs_with_stodlistor <- function() {
+      logdebug("mod_provberedning.R - update_select_inputs_with_stodlistor: called")
       # Update project choices from stödlista
       projects <- esbaser::get_options_project()
       session$userData$stodlistor$projects_vector <- projects[, "id", drop = TRUE]
@@ -91,10 +93,11 @@ mod_provberedning_server <- function(id) {
     }
 
     create_download_handler <- function() {
+      logdebug("mod_provberedning.R - create_download_handler: called")
       content_wrapper <- function(file) {
         report_content(file = file,
-                       biologdata = biologdata_table$df_db,
-                       biologdata_override = biologdata_table$df_override,
+                       biologdata = biologdata_table$db,
+                       biologdata_override = biologdata_table$override,
                        biologdata_colnames = esbaser::get_biologdata_colnames(pretty = TRUE),
                        provlistas = provlista_table$dfs,
                        provlistas_colnames = lapply(provlista_table$dfs, colnames),
@@ -109,6 +112,7 @@ mod_provberedning_server <- function(id) {
     }
 
     render_dt_clean <- function(df, colnames) {
+      logdebug("mod_provberedning.R - render_dt_clean: called")
       DT::renderDT(df,
                    options = list(dom = "t"),
                    rownames = FALSE,
@@ -117,6 +121,7 @@ mod_provberedning_server <- function(id) {
     }
 
     update_selected_accnrs <- function() {
+      logdebug("mod_provberedning.R - update_selected_accnrs: called")
       shiny::req(input$accnr_start)
       shiny::req(input$accnr_end)
 
@@ -132,30 +137,38 @@ mod_provberedning_server <- function(id) {
       if (accnr_start_list$letter != accnr_end_list$letter) {
         output$accnr_selection_message <- shiny::renderText(
           "AccNR start and end are not part of the same series. Ensure they start with the same letter.")
+        accession_data_table$db <- tibble()
+        selected_accnrs(character(0))
         return()
       } else if (accnr_start_list$year != accnr_end_list$year) {
         output$accnr_selection_message <- shiny::renderText(
           "AccNR start and end are not from the same year.")
+        accession_data_table$db <- tibble()
+        selected_accnrs(character(0))
         return()
       } else if (accnr_end_list$value < accnr_start_list$value) {
         output$accnr_selection_message <- shiny::renderText(
           "AccNR start comes after end. Ensure AccNR start is before AccNR end.")
+        accession_data_table$db <- tibble()
+        selected_accnrs(character(0))
         return()
       } else if (accnr_end_list$value - accnr_start_list$value >= 256) {
         output$accnr_selection_message <- shiny::renderText(
           "To large range, select fewer than 256.")
+        accession_data_table$db <- tibble()
+        selected_accnrs(character(0))
         return()
       } else {
         output$accnr_selection_message <- shiny::renderText("")
       }
 
-      accession_data <- esbaser::load_accessions(input$accnr_start, input$accnr_end)
+      accession_data <- esbaser::get_accessions_between(conn, input$accnr_start, input$accnr_end)
 
       series_list <- lapply(seq(0, accnr_end_list$value - accnr_start_list$value), esbaser::accnr_add, accnr_list = accnr_start_list)
       series <- unlist(lapply(series_list, esbaser::accnr_sprint))
       series_db <- unlist(lapply(series_list, esbaser::accnr_to_database_format))
 
-      if (!identical(sort(series_db), sort(accession_data[, "id", drop = TRUE]))) {
+      if (!identical(sort(series_db |> as.character()), sort(accession_data |> select(id) |> unlist() |> as.character()))) {
         output$accnr_selection_message <- shiny::renderText(
           "Not all AccNRs exists in the database.")
         output$accnr_selection_dt <- render_dt_clean({
@@ -168,37 +181,48 @@ mod_provberedning_server <- function(id) {
             ))
           )
         }, colnames = c("Missing from Database"))
+        accession_data_table$db <- tibble()
+        selected_accnrs(character(0))
         return()
-      } else if (length(unique(accession_data[, "catalog_id", drop = TRUE])) != 1) {
+      } else if (accession_data |> select(catalog_id) |> unlist() |> unique() |> length() != 1) {
         output$accnr_selection_message <- shiny::renderText(
           "The AccNRs belong to different catalogs.")
         output$accnr_selection_dt <- render_dt_clean({
           accession_data |> select(id, catalog_id)
+          # TODO: Replace with repr
         },
         colnames = c("AccNR", "Catalog"))
+        accession_data_table$db <- tibble()
+        selected_accnrs(character(0))
         return()
-      } else if (length(unique(accession_data[, "species_id", drop = TRUE])) != 1) {
+      } else if (accession_data |> select(species_id) |> unlist() |> unique() |> length() != 1) {
         output$accnr_selection_message <- shiny::renderText(
           "The AccNRs belong to different species.")
         output$accnr_selection_dt <- render_dt_clean({
           accession_data |> select(id, species_id)
+          # TODO: Replace with repr
         },
         colnames = c("AccNR", "Species"))
+        accession_data_table$db <- tibble()
+        selected_accnrs(character(0))
         return()
-      } else if (length(unique(accession_data[, "locality_id", drop = TRUE])) != 1) {
+      } else if (accession_data |> select(locality_id) |> unlist() |> unique() |> length() != 1) {
         output$accnr_selection_message <- shiny::renderText(
           "The AccNRs belong to different localities.")
         output$accnr_selection_dt <- render_dt_clean({
           accession_data |> select(id, locality_id)
+          # TODO: Replace with repr
         },
         colnames = c("AccNR", "Locality"))
+        accession_data_table$db <- tibble()
+        selected_accnrs(character(0))
         return()
       } else {
         output$accnr_selection_message <- shiny::renderText("")
         output$accnr_selection_dt <- DT::renderDT(data.frame())
       }
 
-      accession_data_table$tib <- accession_data
+      accession_data_table$db <- accession_data
       selected_accnrs(series)
     }
 
@@ -212,6 +236,7 @@ mod_provberedning_server <- function(id) {
       if (!esbaser::accnr_validate(input$accnr_start)) {
         output$accnr_start_message <- shiny::renderText(
           "Invalid AccNR in start. Please enter on the form '[ABCDGHLXP]YYYY/XXXXX' or '[ABCDGHLXP]YYYYXXXXX'")
+        selected_accnrs(character(0))
         return()
       } else {
         output$accnr_start_message <- shiny::renderText("")
@@ -225,6 +250,7 @@ mod_provberedning_server <- function(id) {
       if (!esbaser::accnr_validate(input$accnr_end)) {
         output$accnr_end_message <- shiny::renderText(
           "Invalid AccNR in end. Please enter on the form '[ABCDGHLXP]YYYY/XXXXX' or '[ABCDGHLXP]YYYYXXXXX'")
+        selected_accnrs(character(0))
         return()
       } else {
         output$accnr_end_message <- shiny::renderText("")
@@ -234,8 +260,16 @@ mod_provberedning_server <- function(id) {
     })
 
     # ---------- MODULE SERVERS ----------
-    mod_biologdata_server("biologdata", selected_accnrs, biologdata_table)
-    mod_provlista_server("provlista", selected_accnrs, provlista_table)
-    mod_validera_server("validera")
+    mod_biologdata_server("biologdata",
+                          conn = conn,
+                          selected_accnrs = selected_accnrs,
+                          accession_data_table = accession_data_table,
+                          biologdata_table = biologdata_table)
+    mod_provlista_server("provlista",
+                         conn = conn,
+                         selected_accnrs = selected_accnrs,
+                         provlista_table = provlista_table)
+    mod_validera_server("validera",
+                        conn = conn)
   })
 }

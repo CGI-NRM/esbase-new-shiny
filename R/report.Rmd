@@ -108,7 +108,6 @@ names(ccount_analytiker) <- c(" ", metas[, "analytiker", drop = TRUE])
 names(ccount_provtagningsinst) <- c(" ", metas[, "provtagningsinst", drop = TRUE])
 names(ccount_vavnad) <- c(" ", metas[, "vavnad", drop = TRUE])
 
-# TODO: column_spec with min-width for provid
 knitr::kable(
              df, "latex", col.names = cnames,
              linesep = "", booktabs = FALSE, caption = "Provlista") |>

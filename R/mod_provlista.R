@@ -1,21 +1,24 @@
 mod_provlista_ui <- function(id) {
   ns <- shiny::NS(id)
 
-  shiny::div(id = ns("provlista"),
-             shiny::h3("Provlista"),
-             shiny::actionButton(inputId = ns("lagg_till_prov"), label = "Lägg till prov"),
-             shiny::actionButton(inputId = ns("set_limniska"), label = "Set Limniska Programmet Prover", disabled = TRUE),
-             shiny::br(),
-             shiny::br(),
-             shiny::tabsetPanel(
-               id = ns("prov_tabset_panel"),
-               provlist_ui(create_prov_ns("prov1", ns), "prov1")
-             )
+  shiny::div(
+    id = ns("provlista"),
+#    shiny::h3("Provlista"),
+    shiny::actionButton(inputId = ns("lagg_till_prov"), label = "Lägg till prov"),
+    shiny::actionButton(inputId = ns("set_limniska"), label = "Set Limniska Programmet Prover", disabled = TRUE),
+    shiny::br(),
+    shiny::br(),
+    shiny::tabsetPanel(
+      type = "tabs",
+      id = ns("prov_tabset_panel"),
+      provlist_ui(create_prov_ns("prov1", ns), "prov1")
+    )
   )
 }
 
-mod_provlista_server <- function(id, selected_accnrs, provlista_table) {
+mod_provlista_server <- function(id, conn, selected_accnrs, provlista_table) {
   shiny::moduleServer(id, function(input, output, session) {
+    loginfo("mod_provlista.R: module server start")
     # ---------- REACTIVE VARIABLES ----------
     # A vector of the names of all provs
     provs <- shiny::reactiveVal()
@@ -45,12 +48,14 @@ mod_provlista_server <- function(id, selected_accnrs, provlista_table) {
 
     # Create a new provid_table dataframe with default/empty values and place in provid_table
     create_provid_table <- function(name) {
+      logdebug("mod_provlista.R - create_provid_table: called")
+      num <- length(selected_accnrs())
       provlista_table$dfs[[name]] <- data.frame(
         accnr = selected_accnrs(),
-        provid = "",
-        aces = "",
-        delvikt = as.numeric(NA),
-        provvikt = as.numeric(NA))
+        provid = rep("", num),
+        aces = rep("", num),
+        delvikt = as.numeric(NA) |> rep(num),
+        provvikt = as.numeric(NA) |> rep(num))
 
       provlista_table$metas[name, "vavnad"] <- ifelse(is.null(input[[prov_io(name, "vavnad")]]),
                                                       "", input[[prov_io(name, "vavnad")]])
@@ -67,6 +72,7 @@ mod_provlista_server <- function(id, selected_accnrs, provlista_table) {
     }
 
     handle_provid_table_change <- function(name, new_table) {
+      logdebug("mod_provlista.R - handle_provid_table_change: called")
       if (is.null(provlista_table$dfs[[name]]) || nrow(new_table) != nrow(provlista_table$dfs[[name]])) {
         shiny::showNotification(
           paste0(
@@ -112,6 +118,7 @@ mod_provlista_server <- function(id, selected_accnrs, provlista_table) {
     }
 
     render_provid_table <- function(name) {
+      logdebug("mod_provlista.R - render_provid_table: called")
       if (is.null(input[[prov_io(name, "homogenat")]]) ||
           is.null(input[[prov_io(name, "analyslab")]])) {
         shiny::showNotification(
@@ -149,6 +156,7 @@ mod_provlista_server <- function(id, selected_accnrs, provlista_table) {
     }
 
     klona_provid_fran_forsta <- function(name) {
+      logdebug("mod_provlista.R - klona_provid_fran_forsta: called")
       if (!esbaser::provid_validate(provlista_table$dfs[[name]][1, "provid"])) {
         shiny::showNotification(
           "Invalid or missing ProvID in first row. Please enter on the form 'Q2022-12345'",
@@ -162,6 +170,7 @@ mod_provlista_server <- function(id, selected_accnrs, provlista_table) {
     }
 
     sekvens_provid_fran_forsta <- function(name) {
+      logdebug("mod_provlista.R - sekvens_provid_fran_forsta: called")
       if (!esbaser::provid_validate(provlista_table$dfs[[name]][1, "provid"])) {
         shiny::showNotification(
           "Invalid or missing ProvID in first row. Please enter on the form 'Q2022-12345'",
@@ -184,6 +193,7 @@ mod_provlista_server <- function(id, selected_accnrs, provlista_table) {
     }
 
     create_prov_section <- function(name) {
+      logdebug("mod_provlista.R - create_prov_section: called")
       if (name %in% provs()) {
         shiny::showNotification(
           paste0(
@@ -208,10 +218,12 @@ mod_provlista_server <- function(id, selected_accnrs, provlista_table) {
     }
 
     add_new_prov_section_observe_events <- function(name) {
+      logdebug("mod_provlista.R - add_new_prov_section_observe_events: called")
       # Once the vavnad select exists, update it with the options from esbase
       shiny::observeEvent(input[[prov_io(name, "vavnad")]], {
         update_select_inputs_with_stodlistor(name)
       }, once = TRUE)
+
 
       # This handles the first render aswell when the UI has been renderer, and the input$ has been initialized
       # Except for the initial prov1, where the input already exists and the observeEvent for selected_accnrs()
@@ -266,11 +278,16 @@ mod_provlista_server <- function(id, selected_accnrs, provlista_table) {
         )[session$userData$stodlistor$material_type_vector == input[[prov_io(name, "vavnad")]]]
       })
 
+      o11 <- shiny::observeEvent(input[[prov_io(name, "delete_section")]], {
+        delete_prov_section(name)
+      }, ignoreInit = TRUE)
+
       # Save observe events so that they can be deleted later
-      provs_observe_events[[name]] <- c(o1, o2, o3, o4, o5, o6, o7, o8, o9, o10)
+      provs_observe_events[[name]] <- c(o1, o2, o3, o4, o5, o6, o7, o8, o9, o10, o11)
     }
 
     update_select_inputs_with_stodlistor <- function(name) {
+      logdebug("mod_provlista.R - update_select_inputs_with_stodlistor: called")
       # Update vävnad choices from stödlista
       material_type <- esbaser::get_options_material_type()
       session$userData$stodlistor$material_type_vector <- material_type[, "id", drop = TRUE]
@@ -282,17 +299,25 @@ mod_provlista_server <- function(id, selected_accnrs, provlista_table) {
     }
 
     delete_prov_section <- function(name) {
-      # NOTE: OBS NOT TESTED/USED YET
-      # remove name from provs
-      provs(provs()[-which(provs() == name)])
+      logdebug("mod_provlista.R - delete_prov_section: called")
 
-      # remove ui
-      # TODO:
+      if (length(provs()) <= 1) {
+        shiny::showNotification("There is only one prov left, cannot delete it.", duration = 10)
+        return()
+      }
+
+      provs(provs()[provs() != name])
+      provlista_table$metas <- provlista_table$metas[rownames(provlista_table$metas) != name, ]
+      provlista_table$dfs[[name]] <- NULL
+
+      shiny::removeTab(inputId = "prov_tabset_panel", target = session$ns(prov_io(name, "tabpanel")))
 
       # destroy observers
       for (o in provs_observe_events[[name]]) {
         o$destroy()
       }
+
+      provs_observe_events[[name]] <- NULL
     }
 
     # ---------- ONE-TIME SETUP ----------
@@ -332,6 +357,13 @@ mod_provlista_server <- function(id, selected_accnrs, provlista_table) {
           handle_provid_table_change(name, current_dfs[[name]])
         }
       }
+    })
+
+    shiny::observeEvent(input$prov_tabset_panel, {
+      prov <- stringr::str_match(input$prov_tabset_panel,
+                                 paste0("(", session$ns(""), ")(?<prov>.*)(_tabpanel)")
+      )[, "prov"]
+      render_provid_table(prov)
     })
   })
 }

@@ -1,4 +1,5 @@
 create_prov_ns <- function(name, ns) {
+  logdebug("provlist_ui.R - create_prov_ns: called")
   function(id) {
     ns(paste0(name, "_", id))
   }
@@ -9,10 +10,16 @@ create_prov_ns <- function(name, ns) {
 # Its almost a custom done namespace, but is done this way to place all the functions
 # and data in mod_provlista_server
 provlist_ui <- function(prov_ns, name) {
+  logdebug("provlist_ui.R - provlist_ui: called")
   shiny::tabPanel(
     id = prov_ns("tabpanel"),
     title = name,
+    value = prov_ns("tabpanel"),
     shiny::wellPanel(
+      shiny::span(
+        shiny::actionButton(inputId = prov_ns("delete_section"), label = "", icon = shiny::icon("trash"),
+                            style = "color: white; background-color: red;"),
+        style = "float: right;"),
       shiny::h2(name, style = "color: #888888;"),
       shiny::fluidRow(
         shiny::column(4,

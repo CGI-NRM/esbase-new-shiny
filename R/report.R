@@ -24,6 +24,8 @@ report_content <- function(
     provlistas_metas = provlistas_metas
   )
 
+  print(params)
+
   # Knit the document, passing in the `params` list, and eval it in a child of the gloabl environment
   # This isolates the code in the document from the code in this app.
   rmarkdown::render(temp_report, output_file = file,
