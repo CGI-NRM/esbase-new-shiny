@@ -1,5 +1,5 @@
 # Package names
-packages <- c("shiny", "shinyBS", "shinyjs", "DT", "remotes", "stringr", "dplyr",
+packages <- c("shiny", "shinyBS", "shinyjs", "DT", "remotes", "stringr", "dplyr", "rlang", "fastmap",
               "rhandsontable", "htmlwidgets", "tibble", "knitr", "kableExtra", "logging")
 
 # Install packages not yet installed
@@ -35,17 +35,22 @@ source("report.R")
 source("rhandsontable_js.R")
 source("kableExtraExtra.R")
 
+# DataHolder object, replacement for reactiveValues without reactiveness
+source("dataHolder.R")
+
+# Shiny App
 ui <- shiny::fluidPage(
   shinyjs::useShinyjs(),
   shiny::includeCSS("www/style.css"),
   shiny::titlePanel("Esbase New"),
   mod_provberedning_ui("provberedning")
-#  shiny::div(style = "height: 100vh")
 )
 
 server <- function(input, output, session) {
   loginfo("app.R: server started")
   conn <- esbaser::connect_to_database()
+
+  # TODO: Use dataHolder to save stodlistar
 
   # ---------- MODULE SERVERS ----------
   mod_provberedning_server("provberedning", conn)

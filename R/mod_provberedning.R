@@ -60,7 +60,7 @@ mod_provberedning_server <- function(id, conn) {
 
   # Containing $df_db which is the table of the biologdata pulled from the db
   # and $df_override which contains mostly NAs, and then values where the user has changed/enetered in the table
-  biologdata_table <- shiny::reactiveValues()
+  biologdata_table <- dataHolder()
 
   # Containing $db which is a tibble of the accession data gathered from the db
   accession_data_table <- shiny::reactiveValues()
@@ -69,7 +69,7 @@ mod_provberedning_server <- function(id, conn) {
   #                     and $metas which is a dataframe where the
   #                         rowsnames are prov-names, and the
   #                         columns are 'homogenat analyslab analystyp analytiker provtagningsinst vavnads'
-  provlista_table <- shiny::reactiveValues()
+  provlista_table <- dataHolder()
 
   # Containing $material_type_vector
   #            $species_vector
@@ -175,9 +175,7 @@ mod_provberedning_server <- function(id, conn) {
           data.frame(
             missing = unlist(lapply(
                 setdiff(series_db, accession_data |> select(id) |> unlist()),
-                function(accdb) {
-                  esbaser::accnr_sprint(esbaser::accdb_parse_to_accnr(accdb))
-                }
+                \(accdb) esbaser::accnr_sprint(esbaser::accdb_parse_to_accnr(accdb))
             ))
           )
         }, colnames = c("Missing from Database"))

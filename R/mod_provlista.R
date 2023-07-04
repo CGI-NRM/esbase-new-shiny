@@ -183,9 +183,7 @@ mod_provlista_server <- function(id, conn, selected_accnrs, provlista_table) {
       new_table[selected_accnrs() != "", "provid"] <- unlist(
         lapply(
           seq_len(nrow(new_table))[selected_accnrs() != ""],
-          function(i) {
-            esbaser::provid_sprint(esbaser::provid_add(parsed, i - 1))
-          }
+          \(i) esbaser::provid_sprint(esbaser::provid_add(parsed, i - 1))
         )
       )
 
