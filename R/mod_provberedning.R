@@ -123,7 +123,7 @@ mod_provberedning_server <- function(id, db) {
     render_dt_clean <- function(df, colnames) {
       logdebug("mod_provberedning.R - render_dt_clean: called")
       DT::renderDT(df,
-                   options = list(dom = "t"),
+                   options = list(dom = "tp"),
                    rownames = FALSE,
                    colnames = colnames
       )
