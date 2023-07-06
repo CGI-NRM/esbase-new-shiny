@@ -27,17 +27,19 @@ mod_biologdata_ui <- function(id) {
     ),
     shiny::fluidRow(
       shiny::column(4,
-                    shiny::textInput(
+                    shiny::textAreaInput(
                       inputId = ns("lokal_output"),
                       label = "Lokal",
-                      width = "100%"
+                      width = "100%",
+                      resize = "vertical"
                     ) |> shinyjs::disabled()
       ),
       shiny::column(4,
-                    shiny::textInput(
+                    shiny::textAreaInput(
                       inputId = ns("artnamn_output"),
                       label = "Artnamn",
-                      width = "100%"
+                      width = "100%",
+                      resize = "vertical"
                     ) |> shinyjs::disabled()
       ),
       shiny::column(4,
@@ -61,38 +63,34 @@ mod_biologdata_ui <- function(id) {
   )
 }
 
-
-mod_biologdata_server <- function(id, conn, selected_accnrs, accession_data_table, biologdata_table) {
+mod_biologdata_server <- function(id, db, selected_accnrs, accession_data_table, biologdata_table) {
   shiny::moduleServer(id, function(input, output, session) {
     loginfo("mod_biologdata.R: module server start")
 
     # ---------- FUNCTIONS ----------
-#    update_select_inputs_with_stodlistor <- function() {
-#      # Update lokaler choices from stödlista
-#      lokaler <- esbaser::get_options_lokaler()
-#      session$userData$stodlistor$lokaler_vector <- lokaler[, "id", drop = TRUE]
-#      names(session$userData$stodlistor$lokaler_vector) <- lokaler[, "representation", drop = TRUE]
-#      shiny::updateSelectizeInput(session, "lokal", choices = session$userData$stodlistor$lokaler_vector,
-#                                  selected = NA, server = TRUE)
-# 
-#      # Update arter choices from stödlista
-#      species <- esbaser::get_options_species()
-#      session$userData$stodlistor$species_vector <- species[, "id", drop = TRUE]
-#      names(session$userData$stodlistor$species_vector) <- species[, "representation", drop = TRUE]
-#      shiny::updateSelectizeInput(session, "artnamn", choices = session$userData$stodlistor$species_vector,
-#                                  selected = NA, server = TRUE)
-#    }
-
-    update_from_accession_data <- function() {
+    update_static_data_from_accession_data <- function() {
       logdebug("mod_biologdata.R - update_from_accession_data: called")
       shiny::req(accession_data_table$db)
-      shiny::req(nrow(accession_data_table$db) > 0)
 
-      # TODO: Replace with repr
-      shiny::updateTextInput(inputId = "lokal_output", value = accession_data_table$db[1, "locality_id", drop = TRUE])
-      shiny::updateTextInput(inputId = "artnamn_output", value = accession_data_table$db[1, "species_id", drop = TRUE])
-      shiny::updateTextInput(inputId = "fangstdatum_fran_output", value = accession_data_table$db[1, "discovery_date_start", drop = TRUE])
-      shiny::updateTextInput(inputId = "fangstdatum_till_output", value = accession_data_table$db[1, "discovery_date_end", drop = TRUE])
+      if (nrow(accession_data_table$db) > 0) {
+        shiny::updateTextAreaInput(
+          inputId = "lokal_output",
+          value = accession_data_table$db |>
+          select(locality_id) |> first() |> repr_locality(db)
+        )
+        shiny::updateTextAreaInput(
+          inputId = "artnamn_output",
+          value = accession_data_table$db |>
+          select(species_id) |> first() |> repr_species(db)
+        )
+        shiny::updateTextInput(inputId = "fangstdatum_fran_output", value = accession_data_table$db[1, "discovery_date_start", drop = TRUE])
+        shiny::updateTextInput(inputId = "fangstdatum_till_output", value = accession_data_table$db[1, "discovery_date_end", drop = TRUE])
+      } else {
+        shiny::updateTextAreaInput(inputId = "lokal_output", value = "")
+        shiny::updateTextAreaInput(inputId = "artnamn_output", value = "")
+        shiny::updateTextInput(inputId = "fangstdatum_fran_output", value = "")
+        shiny::updateTextInput(inputId = "fangstdatum_till_output", value = "")
+      }
     }
 
     render_details_table <- function() {
