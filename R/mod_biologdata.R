@@ -196,7 +196,7 @@ mod_biologdata_server <- function(id, conn, selected_accnrs, accession_data_tabl
     })
 
     shiny::observeEvent(accession_data_table$db, {
-      update_from_accession_data()
-    })
+      update_static_data_from_accession_data()
+    }, ignoreNULL = FALSE)
   })
 }

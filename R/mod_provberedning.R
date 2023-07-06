@@ -54,12 +54,21 @@ mod_provberedning_ui <- function(id) {
              )
 }
 
-mod_provberedning_server <- function(id, conn) {
+mod_provberedning_server <- function(id, db) {
+
+  # A new holder to move into, to replace selected_accnrs, biologdata_table and accession_data_table
+  # $acc
+  # $acc_min
+  # $acc_max
+  # $bio
+  # $bio_override
+  selected <- dataHolder()
+
   # A vector of the currently selected accnrs as specified in the table in the biologdata tab
   selected_accnrs <- shiny::reactiveVal()
 
-  # Containing $df_db which is the table of the biologdata pulled from the db
-  # and $df_override which contains mostly NAs, and then values where the user has changed/enetered in the table
+  # Containing $db which is the table of the biologdata pulled from the db
+  # and $override which contains mostly NAs, and then values where the user has changed/enetered in the table
   biologdata_table <- dataHolder()
 
   # Containing $db which is a tibble of the accession data gathered from the db
@@ -162,54 +171,74 @@ mod_provberedning_server <- function(id, conn) {
         output$accnr_selection_message <- shiny::renderText("")
       }
 
-      accession_data <- esbaser::get_accessions_between(conn, input$accnr_start, input$accnr_end)
+      accession_data <- esbaser::get_accessions_between(db$conn, input$accnr_start, input$accnr_end)
 
       series_list <- lapply(seq(0, accnr_end_list$value - accnr_start_list$value), esbaser::accnr_add, accnr_list = accnr_start_list)
       series <- unlist(lapply(series_list, esbaser::accnr_sprint))
       series_db <- unlist(lapply(series_list, esbaser::accnr_to_database_format))
+
+      # TODO: Pull unique here - check if they are
+      locality_id <- NULL
+
+      # TODO: make accnr handle vectors of things
 
       if (!identical(sort(series_db |> as.character()), sort(accession_data |> select(id) |> unlist() |> as.character()))) {
         output$accnr_selection_message <- shiny::renderText(
           "Not all AccNRs exists in the database.")
         output$accnr_selection_dt <- render_dt_clean({
           data.frame(
-            missing = unlist(lapply(
-                setdiff(series_db, accession_data |> select(id) |> unlist()),
-                \(accdb) esbaser::accnr_sprint(esbaser::accdb_parse_to_accnr(accdb))
-            ))
+            missing = lapply(
+              setdiff(series_db, accession_data |> select(id) |> unlist()),
+              function(accdb) esbaser::accnr_sprint(esbaser::accdb_parse_to_accnr(accdb))
+            ) |> unlist()
           )
         }, colnames = c("Missing from Database"))
         accession_data_table$db <- tibble()
         selected_accnrs(character(0))
         return()
-      } else if (accession_data |> select(catalog_id) |> unlist() |> unique() |> length() != 1) {
+      } else if (accession_data |> select(catalog_id) |> unique() |> nrow() != 1) {
         output$accnr_selection_message <- shiny::renderText(
           "The AccNRs belong to different catalogs.")
         output$accnr_selection_dt <- render_dt_clean({
-          accession_data |> select(id, catalog_id)
-          # TODO: Replace with repr
+          data.frame(
+            id = apply(
+              accession_data |> select(id), 1,
+              function(accdb) esbaser::accnr_sprint(esbaser::accdb_parse_to_accnr(accdb))
+            ),
+            catalog = accession_data |> select(catalog_id) |> repr_catalog(db)
+          )
         },
         colnames = c("AccNR", "Catalog"))
         accession_data_table$db <- tibble()
         selected_accnrs(character(0))
         return()
-      } else if (accession_data |> select(species_id) |> unlist() |> unique() |> length() != 1) {
+      } else if (accession_data |> select(species_id) |> unique() |> nrow() != 1) {
         output$accnr_selection_message <- shiny::renderText(
           "The AccNRs belong to different species.")
         output$accnr_selection_dt <- render_dt_clean({
-          accession_data |> select(id, species_id)
-          # TODO: Replace with repr
+          data.frame(
+            id = apply(
+              accession_data |> select(id), 1,
+              function(accdb) esbaser::accnr_sprint(esbaser::accdb_parse_to_accnr(accdb))
+            ),
+            species = accession_data |> select(species_id) |> repr_species(db)
+          )
         },
         colnames = c("AccNR", "Species"))
         accession_data_table$db <- tibble()
         selected_accnrs(character(0))
         return()
-      } else if (accession_data |> select(locality_id) |> unlist() |> unique() |> length() != 1) {
+      } else if (accession_data |> select(locality_id) |> unique() |> nrow() != 1) {
         output$accnr_selection_message <- shiny::renderText(
           "The AccNRs belong to different localities.")
         output$accnr_selection_dt <- render_dt_clean({
-          accession_data |> select(id, locality_id)
-          # TODO: Replace with repr
+          data.frame(
+            id = apply(
+              accession_data |> select(id), 1,
+              function(accdb) esbaser::accnr_sprint(esbaser::accdb_parse_to_accnr(accdb))
+            ),
+            locality = accession_data |> select(locality_id) |> repr_locality(db)
+          )
         },
         colnames = c("AccNR", "Locality"))
         accession_data_table$db <- tibble()
@@ -234,6 +263,7 @@ mod_provberedning_server <- function(id, conn) {
       if (!esbaser::accnr_validate(input$accnr_start)) {
         output$accnr_start_message <- shiny::renderText(
           "Invalid AccNR in start. Please enter on the form '[ABCDGHLXP]YYYY/XXXXX' or '[ABCDGHLXP]YYYYXXXXX'")
+        accession_data_table$db <- tibble()
         selected_accnrs(character(0))
         return()
       } else {
@@ -249,6 +279,7 @@ mod_provberedning_server <- function(id, conn) {
         output$accnr_end_message <- shiny::renderText(
           "Invalid AccNR in end. Please enter on the form '[ABCDGHLXP]YYYY/XXXXX' or '[ABCDGHLXP]YYYYXXXXX'")
         selected_accnrs(character(0))
+        accession_data_table$db <- tibble()
         return()
       } else {
         output$accnr_end_message <- shiny::renderText("")
@@ -259,15 +290,15 @@ mod_provberedning_server <- function(id, conn) {
 
     # ---------- MODULE SERVERS ----------
     mod_biologdata_server("biologdata",
-                          conn = conn,
+                          db = db,
                           selected_accnrs = selected_accnrs,
                           accession_data_table = accession_data_table,
                           biologdata_table = biologdata_table)
     mod_provlista_server("provlista",
-                         conn = conn,
+                         db = db,
                          selected_accnrs = selected_accnrs,
                          provlista_table = provlista_table)
     mod_validera_server("validera",
-                        conn = conn)
+                        db = db)
   })
 }

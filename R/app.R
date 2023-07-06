@@ -23,20 +23,22 @@ logReset()
 addHandler(writeToConsole)
 setLevel("DEBUG")
 
-# Sourcing
-source("mod_biologdata.R")
-source("mod_provberedning.R")
-source("mod_provlista.R")
-source("mod_validera.R")
+# Usefull funtion to pipe into when not all elements/columns contains data
+
+# Sourcing utils
+source("rhandsontable_js.R")
+source("kableExtraExtra.R")
+source("dataHolder.R") # DataHolder object, replacement for reactiveValues without reactiveness
+source("utils.R")
 
 source("provlist_ui.R")
 source("report.R")
 
-source("rhandsontable_js.R")
-source("kableExtraExtra.R")
-
-# DataHolder object, replacement for reactiveValues without reactiveness
-source("dataHolder.R")
+# Sourcing modules
+source("mod_biologdata.R")
+source("mod_provberedning.R")
+source("mod_provlista.R")
+source("mod_validera.R")
 
 # Shiny App
 ui <- shiny::fluidPage(
@@ -47,13 +49,28 @@ ui <- shiny::fluidPage(
 )
 
 server <- function(input, output, session) {
-  loginfo("app.R: server started")
-  conn <- esbaser::connect_to_database()
+  loginfo("app.R - server: server started")
 
-  # TODO: Use dataHolder to save stodlistar
+  conn <- esbaser::connect_to_database()
+  loginfo("app.R - server: connection made to database")
+
+  load_start <- Sys.time()
+  db <- dataHolder(
+    conn = conn,
+    locality = esbaser::get_locality(conn),
+    country = esbaser::get_country(conn),
+    county = esbaser::get_county(conn),
+    catalog = esbaser::get_catalog(conn),
+    coast = esbaser::get_coast(conn),
+    province = esbaser::get_province(conn),
+    species = esbaser::get_species(conn)
+  )
+  load_end <- Sys.time()
+
+  logdebug(paste0("app.R - server: loading tables took ", format(load_end - load_start)))
 
   # ---------- MODULE SERVERS ----------
-  mod_provberedning_server("provberedning", conn)
+  mod_provberedning_server("provberedning", db)
 }
 
 shiny::shinyApp(ui, server)
