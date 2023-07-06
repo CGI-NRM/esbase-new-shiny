@@ -63,7 +63,7 @@ mod_biologdata_ui <- function(id) {
   )
 }
 
-mod_biologdata_server <- function(id, db, selected_accnrs, accession_data_table, biologdata_table) {
+mod_biologdata_server <- function(id, db, selected, accession_data_table, biologdata_table) {
   shiny::moduleServer(id, function(input, output, session) {
     loginfo("mod_biologdata.R: module server start")
 
@@ -130,7 +130,7 @@ mod_biologdata_server <- function(id, db, selected_accnrs, accession_data_table,
 
     handle_changed_accnrs <- function() {
       logdebug("mod_biologdata.R - handle_changed_accnrs: called")
-      biologdata_table$db <- tibble(accession_id = selected_accnrs())
+      biologdata_table$db <- tibble(accession_id = esbaser::accdb_to_accnr(selected$accs_db))
       biologdata_table$override <- biologdata_table$db
 
       # TODO: Load mammal/fish/clam etc table based on accnrs
@@ -189,7 +189,7 @@ mod_biologdata_server <- function(id, db, selected_accnrs, accession_data_table,
       handle_biologdata_table_update(new_table)
     })
 
-    shiny::observeEvent(selected_accnrs(), {
+    shiny::observeEvent(selected$update(), {
       handle_changed_accnrs()
     })
 

@@ -4,7 +4,7 @@ mod_validera_ui <- function(id) {
   )
 }
 
-mod_validera_server <- function(id, db) {
+mod_validera_server <- function(id, db, selected) {
   shiny::moduleServer(id, function(input, output, session) {
   })
 }

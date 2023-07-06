@@ -16,14 +16,14 @@ mod_provlista_ui <- function(id) {
   )
 }
 
-mod_provlista_server <- function(id, db, selected_accnrs, provlista_table) {
+mod_provlista_server <- function(id, db, selected, provlista_table) {
   shiny::moduleServer(id, function(input, output, session) {
     loginfo("mod_provlista.R: module server start")
     # ---------- REACTIVE VARIABLES ----------
     # A vector of the names of all provs
     provs <- shiny::reactiveVal()
     # A list/reactiveValues where the keys hold vectors of all saved observeEvents, so that they can be deleted
-    provs_observe_events <- shiny::reactiveValues()
+    provs_observe_events <- dataHolder()
 
     # ---------- DEFAULT VALUES ----------
     provlista_table$dfs <- list()
@@ -49,9 +49,9 @@ mod_provlista_server <- function(id, db, selected_accnrs, provlista_table) {
     # Create a new provid_table dataframe with default/empty values and place in provid_table
     create_provid_table <- function(name) {
       logdebug("mod_provlista.R - create_provid_table: called")
-      num <- length(selected_accnrs())
+      num <- length(selected$accs_db)
       provlista_table$dfs[[name]] <- data.frame(
-        accnr = selected_accnrs(),
+        accnr = esbaser::accdb_to_accnr(selected$accs_db),
         provid = rep("", num),
         aces = rep("", num),
         delvikt = as.numeric(NA) |> rep(num),
@@ -149,7 +149,7 @@ mod_provlista_server <- function(id, db, selected_accnrs, provlista_table) {
           rhandsontable::hot_col("accnr", readOnly = TRUE) |>
           rhandsontable::hot_col("provid", renderer = rhot_renderer_validate_provid_gray_bg_on_read_only) |>
           rhandsontable::hot_col(which(colnames(df) != "provid"), renderer = rhot_renderer_gray_bg_on_read_only) |>
-          rhandsontable::hot_row(which(selected_accnrs() == ""), readOnly = TRUE) |>
+          rhandsontable::hot_row(which(selected$accs_db == ""), readOnly = TRUE) |>
           rhot_set_visual_colheaders(provid_table_cols_pretty[match(cols, provid_table_cols)]) |>
           rhot_disable_context_menu()
       })
@@ -165,7 +165,7 @@ mod_provlista_server <- function(id, db, selected_accnrs, provlista_table) {
       }
 
       new_table <- provlista_table$dfs[[name]]
-      new_table[selected_accnrs() != "", "provid"] <- provlista_table$dfs[[name]][1, "provid"]
+      new_table[selected$accs_db != "", "provid"] <- provlista_table$dfs[[name]][1, "provid"]
       handle_provid_table_change(name, new_table)
     }
 
@@ -180,9 +180,9 @@ mod_provlista_server <- function(id, db, selected_accnrs, provlista_table) {
 
       parsed <- esbaser::provid_parse(provlista_table$dfs[[name]][1, "provid"])
       new_table <- provlista_table$dfs[[name]]
-      new_table[selected_accnrs() != "", "provid"] <- unlist(
+      new_table[selected$accs_db != "", "provid"] <- unlist(
         lapply(
-          seq_len(nrow(new_table))[selected_accnrs() != ""],
+          seq_len(nrow(new_table))[selected$accs_db != ""],
           \(i) esbaser::provid_sprint(esbaser::provid_add(parsed, i - 1))
         )
       )
@@ -224,7 +224,7 @@ mod_provlista_server <- function(id, db, selected_accnrs, provlista_table) {
 
 
       # This handles the first render aswell when the UI has been renderer, and the input$ has been initialized
-      # Except for the initial prov1, where the input already exists and the observeEvent for selected_accnrs()
+      # Except for the initial prov1, where the input already exists and the observeEvent for selected$update()
       #     creates and does the initial render
       o1 <- shiny::observeEvent({
         input[[prov_io(name, "analyslab")]]
@@ -342,16 +342,16 @@ mod_provlista_server <- function(id, db, selected_accnrs, provlista_table) {
       create_prov_section(new_name)
     })
 
-    shiny::observeEvent(selected_accnrs(), {
+    shiny::observeEvent(selected$update(), {
       # TODO: If accnr changed, remove row
-      # TODO: If length(selected_accnrs()) change, do not clear all data, only add the necessary new rows
+      # TODO: If length(selected$accs_db) change, do not clear all data, only add the necessary new rows
       current_dfs <- provlista_table$dfs
       for (name in provs()) {
-        if (is.null(current_dfs[[name]]) || nrow(current_dfs[[name]]) != length(selected_accnrs())) {
+        if (is.null(current_dfs[[name]]) || nrow(current_dfs[[name]]) != nrow(selected$accs_db)) {
           create_provid_table(name)
           render_provid_table(name)
         } else {
-          current_dfs[[name]][, "accnr"] <- selected_accnrs()
+          current_dfs[[name]][, "accnr"] <- esbaser::accdb_to_accnr(selceted$accs_db)
           handle_provid_table_change(name, current_dfs[[name]])
         }
       }
