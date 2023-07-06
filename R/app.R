@@ -54,6 +54,11 @@ server <- function(input, output, session) {
   conn <- esbaser::connect_to_database()
   loginfo("app.R - server: connection made to database")
 
+  shiny::onStop(function() {
+    loginfo("app.R - server: stopped")
+    esbaser::disconnect_from_database(conn)
+  })
+
   load_start <- Sys.time()
   db <- dataHolder(
     conn = conn,
