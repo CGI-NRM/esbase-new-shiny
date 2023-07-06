@@ -249,6 +249,14 @@ mod_provberedning_server <- function(id, db) {
         output$accnr_selection_dt <- DT::renderDT(data.frame())
       }
 
+      # New
+      selected$acc_min <- input$accnr_start
+      selected$acc_max <- input$accnr_end
+      selected$acc <- accession_data
+
+      # TODO: Pull biologydata
+
+      # Old
       accession_data_table$db <- accession_data
       selected_accnrs(series)
     }
