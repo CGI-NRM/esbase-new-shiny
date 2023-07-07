@@ -46,13 +46,13 @@ mod_biologdata_ui <- function(id) {
                     shiny::fluidRow(
                       shiny::column(6,
                                     shiny::textInput(
-                                      inputId = ns("fangstdatum_fran_output"),
+                                      inputId = ns("fangst_fran_output"),
                                       label = "Fångstdatum från"
                                     ) |> shinyjs::disabled()
                       ),
                       shiny::column(6,
                                     shiny::textInput(
-                                      inputId = ns("fangstdatum_till_output"),
+                                      inputId = ns("fangst_till_output"),
                                       label = "Fångstdatum till"
                                     ) |> shinyjs::disabled()
                       )
@@ -63,86 +63,90 @@ mod_biologdata_ui <- function(id) {
   )
 }
 
-mod_biologdata_server <- function(id, db, selected, accession_data_table, biologdata_table) {
+mod_biologdata_server <- function(id, db, selected, selected_update, biologdata) {
   shiny::moduleServer(id, function(input, output, session) {
     loginfo("mod_biologdata.R: module server start")
 
     # ---------- FUNCTIONS ----------
     update_static_data_from_accession_data <- function() {
-      logdebug("mod_biologdata.R - update_from_accession_data: called")
-      shiny::req(accession_data_table$db)
+      logdebug("mod_biologdata.R - update_static_data_from_accession_data: called")
 
-      if (nrow(accession_data_table$db) > 0) {
-        shiny::updateTextAreaInput(
-          inputId = "lokal_output",
-          value = accession_data_table$db |>
-          select(locality_id) |> first() |> repr_locality(db)
-        )
-        shiny::updateTextAreaInput(
-          inputId = "artnamn_output",
-          value = accession_data_table$db |>
-          select(species_id) |> first() |> repr_species(db)
-        )
-        shiny::updateTextInput(inputId = "fangstdatum_fran_output", value = accession_data_table$db[1, "discovery_date_start", drop = TRUE])
-        shiny::updateTextInput(inputId = "fangstdatum_till_output", value = accession_data_table$db[1, "discovery_date_end", drop = TRUE])
+      if (!is.null(selected$acc) && nrow(selected$acc) > 0) {
+        shiny::updateTextAreaInput(inputId = "lokal_output", value = selected$acc[1, "locality_id"] |> repr_locality(db))
+        shiny::updateTextAreaInput(inputId = "artnamn_output", value = selected$acc[1, "species_id"] |> repr_species(db))
+        shiny::updateTextInput(inputId = "fangst_fran_output", value = selected$acc[1, "discovery_date_start", drop = TRUE])
+        shiny::updateTextInput(inputId = "fangst_till_output", value = selected$acc[1, "discovery_date_end", drop = TRUE])
       } else {
         shiny::updateTextAreaInput(inputId = "lokal_output", value = "")
         shiny::updateTextAreaInput(inputId = "artnamn_output", value = "")
-        shiny::updateTextInput(inputId = "fangstdatum_fran_output", value = "")
-        shiny::updateTextInput(inputId = "fangstdatum_till_output", value = "")
+        shiny::updateTextInput(inputId = "fangst_fran_output", value = "")
+        shiny::updateTextInput(inputId = "fangst_till_output", value = "")
       }
+      logfine("mod_biologdata.R - update_static_data_from_accession_data: finished")
     }
 
     render_details_table <- function() {
       logdebug("mod_biologdata.R - render_details_table: called")
-      df <- biologdata_table$db
-      # Render user overrides
 
-      cn <- colnames(biologdata_table$db)
-      for (col in cn[cn != "accession_id"]) {
-        rows <- !is.na(biologdata_table$override[, col, drop = TRUE])
-        df[rows, col] <- biologdata_table$override[rows, col]
-      }
+      shiny::req(biologdata$override)
+
+      df <- biologdata$override
+
       # TODO: Color the cells overridden with another color (orange?). Maybe only if they override another value,
       # if the df_db was NA, no color is needed?
       # Maybe the df_db values are a bit gray, df_override is full black if there was NA before, and if there was
       # a value before, it has orange background
 
       output$details_table <- rhandsontable::renderRHandsontable({
-        hot <- rhandsontable::rhandsontable(df, rowHeaders = NULL, overflow = "visible", maxRows = nrow(df)) |>
-        rhandsontable::hot_context_menu(allowRowEdit = FALSE, allowColEdit = FALSE, allowComments = FALSE, allowCustomBorders = FALSE) |>
-        rhandsontable::hot_col("accession_id", renderer = rhot_renderer_validate_accnr, readOnly = TRUE) |>
-        rhandsontable::hot_col(which(colnames(df) != "accession_id"), renderer = rhot_renderer_gray_bg_on_read_only) |>
-        rhot_set_visual_colheaders(esbaser::get_biologdata_colnames(pretty = TRUE)) |>
-        rhot_disable_context_menu()
+        hot <- (
+          rhandsontable::rhandsontable(df, rowHeaders = NULL, overflow = "visible", maxRows = nrow(df)) |>
+          rhandsontable::hot_context_menu(allowRowEdit = FALSE, allowColEdit = FALSE, allowComments = FALSE, allowCustomBorders = FALSE) |>
+          rhandsontable::hot_col("acc.id", renderer = rhot_renderer_validate_accnr, readOnly = TRUE) |>
+          rhandsontable::hot_col(which(colnames(df) != "acc.id"), renderer = rhot_renderer_gray_bg_on_read_only) |>
+          rhot_set_visual_colheaders(biologdata$colnames) |>
+          rhot_disable_context_menu())
 
         for (row in seq_len(nrow(df))) {
-          if (df[row, "accession_id"] == "") {
-            for (col in which(colnames(df) != "accession_id")) {
+          if (df[row, "acc.id"] == "") {
+            for (col in which(colnames(df) != "acc.id")) {
               hot <- rhandsontable::hot_cell(hot, row, col, readOnly = TRUE)
             }
           }
         }
 
+        for (col in names(biologdata$formats)) {
+          hot <- rhandsontable::hot_col(hot, col, format = biologdata$formats[[col]])
+        }
+
         hot
       })
+      logfine("mod_biologdata.R - render_details_table: finished")
     }
 
     handle_changed_accnrs <- function() {
       logdebug("mod_biologdata.R - handle_changed_accnrs: called")
-      biologdata_table$db <- tibble(accession_id = esbaser::accdb_to_accnr(selected$accs_db))
-      biologdata_table$override <- biologdata_table$db
 
-      # TODO: Load mammal/fish/clam etc table based on accnrs
-      # TODO: Create empty override table
+      if (is.null(selected$acc) || nrow(selected$acc) == 0) {
+        biologdata$df <- tibble()
+        biologdata$formats <- character(0)
+        biologdata$colnames <- character(0)
+        biologdata$override <- tibble()
+      } else {
+        ret <- create_biologdata_table(selected, db)
+        biologdata$df <- ret$df
+        biologdata$formats <- ret$formats
+        biologdata$colnames <- ret$colnames
+        biologdata$override <- biologdata$df
+      }
 
       render_details_table()
-      #handle_biologdata_table_update(df)
+      logfine("mod_biologdata.R - handle_changed_accnrs: finished")
     }
 
     handle_biologdata_table_update <- function(new_table) {
       logdebug("mod_biologdata.R - handle_biologdata_table_update: called")
-      if (nrow(new_table) != nrow(biologdata_table$db) || nrow(new_table) != nrow(biologdata_table$override)) {
+
+      if (nrow(new_table) != nrow(biologdata$override) || nrow(new_table) != nrow(biologdata$override)) {
         shiny::showNotification(
           paste0(
             "You tried to add or remove rows from the specified 'Antal ind.'. Please modify",
@@ -158,26 +162,18 @@ mod_biologdata_server <- function(id, db, selected, accession_data_table, biolog
       # rhandsontable converts all facotrs to ordered factors, convert them back according to what is already in the df_override df
       for (col in cn) {
         if (is.factor(new_table[, col])) {
-          new_table[, col] <- factor(new_table[, col], levels = levels(biologdata_table$override[, col]), ordered = FALSE)
+          new_table[, col] <- factor(new_table[, col], levels = levels(biologdata$override[, col, drop = TRUE]), ordered = FALSE)
         }
       }
 
-      for (col in cn[cn != "accession_id"]) {
-        rows_changed <- biologdata_table$db[col] != new_table[col]
-        rows_changed <- rows_changed | xor(is.na(biologdata_table$db[col]), is.na(new_table[col]))
-        rows_changed <- rows_changed & !rows_replaced_accnr
-
-        rows <- which(rows_changed)
-        biologdata_table$override[rows, col] <- new_table[rows, col]
-
-        if (length(rows) > 0) {
-          changed <- TRUE
-        }
-      }
+      changed <- any(xor(is.na(biologdata$override), is.na(new_table)) | isTRUE(biologdata$override != new_table))
 
       if (changed) {
+        biologdata$override <- new_table
         render_details_table()
       }
+
+      logfine("mod_biologdata.R - handle_biologdata_table_update: finished")
     }
 
     # ---------- ONE-TIME SETUP ----------
@@ -189,11 +185,8 @@ mod_biologdata_server <- function(id, db, selected, accession_data_table, biolog
       handle_biologdata_table_update(new_table)
     })
 
-    shiny::observeEvent(selected$update(), {
+    shiny::observeEvent(selected_update(), {
       handle_changed_accnrs()
-    })
-
-    shiny::observeEvent(accession_data_table$db, {
       update_static_data_from_accession_data()
     }, ignoreNULL = FALSE)
   })

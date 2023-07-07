@@ -4,9 +4,8 @@
 # branch connected to the issue #11
 report_content <- function(
   file,
+  selected,
   biologdata,
-  biologdata_override,
-  biologdata_colnames,
   provlistas,
   provlistas_colnames,
   provlistas_metas
@@ -16,9 +15,8 @@ report_content <- function(
   file.copy("report.Rmd", temp_report, overwrite = TRUE)
 
   params <- list(
+    selected = selected,
     biologdata = biologdata,
-    biologdata_override = biologdata_override,
-    biologdata_colnames = biologdata_colnames,
     provlistas = provlistas,
     provlistas_colnames = provlistas_colnames,
     provlistas_metas = provlistas_metas

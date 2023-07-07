@@ -16,7 +16,7 @@ mod_provlista_ui <- function(id) {
   )
 }
 
-mod_provlista_server <- function(id, db, selected, provlista_table) {
+mod_provlista_server <- function(id, db, selected, selected_update, provlista_table) {
   shiny::moduleServer(id, function(input, output, session) {
     loginfo("mod_provlista.R: module server start")
     # ---------- REACTIVE VARIABLES ----------
@@ -115,6 +115,7 @@ mod_provlista_server <- function(id, db, selected, provlista_table) {
       if (changed) {
         render_provid_table(name)
       }
+      logfine("mod_provlista.R - handle_provid_table_change: finished")
     }
 
     render_provid_table <- function(name) {
@@ -153,6 +154,7 @@ mod_provlista_server <- function(id, db, selected, provlista_table) {
           rhot_set_visual_colheaders(provid_table_cols_pretty[match(cols, provid_table_cols)]) |>
           rhot_disable_context_menu()
       })
+      logfine("mod_provlista.R - render_provid_table: finished")
     }
 
     klona_provid_fran_forsta <- function(name) {
@@ -167,6 +169,7 @@ mod_provlista_server <- function(id, db, selected, provlista_table) {
       new_table <- provlista_table$dfs[[name]]
       new_table[selected$accs_db != "", "provid"] <- provlista_table$dfs[[name]][1, "provid"]
       handle_provid_table_change(name, new_table)
+      logfine("mod_provlista.R - klona_provid_fran_forsta: finished")
     }
 
     sekvens_provid_fran_forsta <- function(name) {
@@ -188,6 +191,7 @@ mod_provlista_server <- function(id, db, selected, provlista_table) {
       )
 
       handle_provid_table_change(name, new_table)
+      logfine("mod_provlista.R - sekvens_provid_fran_forsta: finished")
     }
 
     create_prov_section <- function(name) {
@@ -224,7 +228,7 @@ mod_provlista_server <- function(id, db, selected, provlista_table) {
 
 
       # This handles the first render aswell when the UI has been renderer, and the input$ has been initialized
-      # Except for the initial prov1, where the input already exists and the observeEvent for selected$update()
+      # Except for the initial prov1, where the input already exists and the observeEvent for selected_update()
       #     creates and does the initial render
       o1 <- shiny::observeEvent({
         input[[prov_io(name, "analyslab")]]
@@ -328,6 +332,7 @@ mod_provlista_server <- function(id, db, selected, provlista_table) {
     })
 
     shiny::observeEvent(input$lagg_till_prov, {
+      logdebug("mod_provlista.R - observeEvent(input$lagg_till_prov, {}): called")
       if (length(provs()) == 0) {
         shiny::showNotification(
           paste0(
@@ -340,28 +345,33 @@ mod_provlista_server <- function(id, db, selected, provlista_table) {
       new_name <- provs()[length(provs())]
       new_name <- paste0("prov", new_name |> substring(5) |> as.numeric() + 1)
       create_prov_section(new_name)
+      logfine("mod_provlista.R - observeEvent(input$lagg_till_prov, {}): finished")
     })
 
-    shiny::observeEvent(selected$update(), {
+    shiny::observeEvent(selected_update(), {
+      logdebug("mod_provlista.R - observeEvent(selected_update(), {}): called")
       # TODO: If accnr changed, remove row
       # TODO: If length(selected$accs_db) change, do not clear all data, only add the necessary new rows
       current_dfs <- provlista_table$dfs
       for (name in provs()) {
-        if (is.null(current_dfs[[name]]) || nrow(current_dfs[[name]]) != nrow(selected$accs_db)) {
+        if (is.null(current_dfs[[name]]) || nrow(current_dfs[[name]]) != length(selected$accs_db)) {
           create_provid_table(name)
           render_provid_table(name)
         } else {
-          current_dfs[[name]][, "accnr"] <- esbaser::accdb_to_accnr(selceted$accs_db)
+          current_dfs[[name]][, "accnr"] <- esbaser::accdb_to_accnr(selected$accs_db)
           handle_provid_table_change(name, current_dfs[[name]])
         }
       }
+      logfine("mod_provlista.R - observeEvent(selected_update(), {}): finished")
     })
 
     shiny::observeEvent(input$prov_tabset_panel, {
+      logdebug("mod_provlista.R - observeEvent(input$prov_tabset_panel, {}): called")
       prov <- stringr::str_match(input$prov_tabset_panel,
                                  paste0("(", session$ns(""), ")(?<prov>.*)(_tabpanel)")
       )[, "prov"]
       render_provid_table(prov)
+      logfine("mod_provlista.R - observeEvent(input$prov_tabset_panel, {}): finished")
     })
   })
 }

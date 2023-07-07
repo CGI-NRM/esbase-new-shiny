@@ -8,9 +8,8 @@ classoption:
 geometry: 
   - margin=1.5cm
 params:
+    selected: NA
     biologdata: NA
-    biologdata_override: NA
-    biologdata_colnames: NA
     provlistas: NA
     provlistas_colnames: NA
     provlistas_metas: NA
@@ -46,15 +45,10 @@ header-includes:
 
 ```{r, echo = FALSE, message = FALSE}
 options(knitr.kable.NA = "")
-df <- params$biologdata
-cn <- colnames(df)
+df <- params$biologdata$override
+cn <- params$biologdata$colnames
 
-for (col in cn[cn != "accnr"]) {
-    rows <- !is.na(params$biologdata_override[, col, drop = TRUE])
-    df[rows, col] <- params$biologdata_override[rows, col]
-}
-
-knitr::kable(df, "latex", col.names = params$biologdata_colnames, linesep = "", booktabs = FALSE, caption = "Biologdata") |>
+knitr::kable(df, "latex", col.names = cn, linesep = "", booktabs = FALSE, caption = "Biologdata") |>
     kableExtra::kable_styling(latex_options = c("striped", "hold_position"), position = "center") |>
     kableExtra::row_spec(row = 0, angle = 45) |>
     kableExtraExtra_fit_to_page(caption = TRUE)

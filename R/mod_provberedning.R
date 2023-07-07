@@ -55,35 +55,35 @@ mod_provberedning_ui <- function(id) {
 }
 
 mod_provberedning_server <- function(id, db) {
-
-  # A new holder to move into, to replace selected_accnrs, biologdata_table and accession_data_table
+  # A new holder to move into, to replace selected_accnrs, biologdata_table
   # $acc           - accession table/tibble of selected
   # $accs_db       - vector of selected accnrs, formated in database format
   # $acc_min       - formatted AYYYY/XXXXX
   # $acc_max       - formatted AYYYY/XXXXX
-  # $bio           - clam/fish/mammal etc table/tibble
-  # $bio_override  -
-  # $update        - a reactiveVal which increases when there is a new selection
+  # $bio           - clam/fish/mammal etc table/tibble of selected accession_id
+  # $mat           - all materials that points to selected accession_id (can be multilpe per accession)
+  # $specimen      - all specimen that points to selected accession_id (one per accession)
   selected <- dataHolder(
     acc = tibble(),
     accs_db = character(0),
     acc_min = "",
     acc_max = "",
     bio = tibble(),
-    bio_override = tibble(),
-    update = shiny::reactiveVal()
+    mat = tibble(),
+    specimen = tibble()
   )
+  selected_update <- shiny::reactiveVal(0)
+
+  # A holder for combined biologdata
+  # $df         - The combined data from the database
+  # $override   - The data as the user has entered it
+  # $formats    - A named vector with numbrojs
+  # $colnames   - The pretty colnames
+  biologdata <- dataHolder()
 
   # A vector of the currently selected accnrs as specified in the table in the biologdata tab
   # TODO: Remove this and refactor to new pulling
   selected_accnrs <- shiny::reactiveVal()
-
-  # Containing $db which is the table of the biologdata pulled from the db
-  # and $override which contains mostly NAs, and then values where the user has changed/enetered in the table
-  biologdata_table <- dataHolder()
-
-  # Containing $db which is a tibble of the accession data gathered from the db
-  accession_data_table <- shiny::reactiveValues()
 
   # Containing provlista_table$dfs which is a list with prov-names as keys and the coresponding dataframe as values
   #                     and $metas which is a dataframe where the
@@ -105,10 +105,9 @@ mod_provberedning_server <- function(id, db) {
     update_select_inputs_with_stodlistor <- function() {
       logdebug("mod_provberedning.R - update_select_inputs_with_stodlistor: called")
       # Update project choices from stödlista
-      projects <- esbaser::get_options_project()
-      session$userData$stodlistor$projects_vector <- projects[, "id", drop = TRUE]
-      names(session$userData$stodlistor$projects_vector) <- projects[, "representation", drop = TRUE]
-      shiny::updateSelectizeInput(session, "projekt", choices = session$userData$stodlistor$projects_vector,
+      projects_vector <- db$project |> select(id) |> unlist(use.names = FALSE)
+      names(projects_vector) <- db$project |> select(number, name) |> apply(1, paste_collapse)
+      shiny::updateSelectizeInput(session, "projekt", choices = projects_vector,
                                   selected = NA, server = TRUE)
     }
 
@@ -116,9 +115,8 @@ mod_provberedning_server <- function(id, db) {
       logdebug("mod_provberedning.R - create_download_handler: called")
       content_wrapper <- function(file) {
         report_content(file = file,
-                       biologdata = biologdata_table$db,
-                       biologdata_override = biologdata_table$override,
-                       biologdata_colnames = esbaser::get_biologdata_colnames(pretty = TRUE),
+                       selected = selected,
+                       biologdata = biologdata,
                        provlistas = provlista_table$dfs,
                        provlistas_colnames = lapply(provlista_table$dfs, colnames),
                        provlistas_metas = provlista_table$metas
@@ -147,8 +145,11 @@ mod_provberedning_server <- function(id, db) {
       selected$acc_max <- ""
       selected$accs_db <- character(0)
       selected$bio <- tibble()
+      selected$specimen <- tibble()
+      selected$material <- tibble()
 
-      selected$update(selected$update() + 1)
+      selected_update(selected_update() + 1)
+      logfine("mod_provberedning.R - deselect_selected_accnrs: finished")
     }
 
     update_selected_accnrs <- function() {
@@ -277,9 +278,10 @@ mod_provberedning_server <- function(id, db) {
         selected$bio <- tibble(accession_id = series_db)
       }
 
-      # TODO: setup bio override
-      #selected$bio_override <-
-      selected$update(selected$update() + 1)
+      selected$specimen <- esbaser::get_specimen_between(db$conn, selected$acc_min, selected$acc_max)
+      selected$material <- esbaser::get_material_between(db$conn, selected$acc_min, selected$acc_max)
+
+      selected_update(selected_update() + 1)
     }
 
     # ---------- ONE-TIME SETUP ----------
@@ -289,7 +291,7 @@ mod_provberedning_server <- function(id, db) {
     # ---------- OBSERVE EVENTS ----------
     shiny::observeEvent(input$accnr_start, {
       shiny::req(input$accnr_start)
-      if (!esbaser::accnr_validate(input$accnr_start)) {
+      if (isFALSE(esbaser::accnr_validate(input$accnr_start))) {
         output$accnr_start_message <- shiny::renderText(
           "Invalid AccNR in start. Please enter on the form '[ABCDGHLXP]YYYY/XXXXX' or '[ABCDGHLXP]YYYYXXXXX'")
         deselect_selected_accnrs()
@@ -303,7 +305,7 @@ mod_provberedning_server <- function(id, db) {
 
     shiny::observeEvent(input$accnr_end, {
       shiny::req(input$accnr_end)
-      if (!esbaser::accnr_validate(input$accnr_end)) {
+      if (isFALSE(esbaser::accnr_validate(input$accnr_end))) {
         output$accnr_end_message <- shiny::renderText(
           "Invalid AccNR in end. Please enter on the form '[ABCDGHLXP]YYYY/XXXXX' or '[ABCDGHLXP]YYYYXXXXX'")
         deselect_selected_accnrs()
@@ -319,14 +321,16 @@ mod_provberedning_server <- function(id, db) {
     mod_biologdata_server("biologdata",
                           db = db,
                           selected = selected,
-                          accession_data_table = accession_data_table,
-                          biologdata_table = biologdata_table)
+                          selected_update = selected_update,
+                          biologdata = biologdata)
     mod_provlista_server("provlista",
                          db = db,
                          selected = selected,
+                          selected_update = selected_update,
                          provlista_table = provlista_table)
     mod_validera_server("validera",
                         db = db,
-                        selected = selected)
+                        selected = selected,
+                        selected_update = selected_update)
   })
 }

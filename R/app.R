@@ -21,7 +21,7 @@ library(dplyr)
 library(logging)
 logReset()
 addHandler(writeToConsole)
-setLevel("DEBUG")
+setLevel("FINE")
 
 # Usefull funtion to pipe into when not all elements/columns contains data
 
@@ -36,6 +36,7 @@ source("report.R")
 
 # Sourcing modules
 source("mod_biologdata.R")
+source("utils_biologdata.R")
 source("mod_provberedning.R")
 source("mod_provlista.R")
 source("mod_validera.R")
@@ -67,8 +68,12 @@ server <- function(input, output, session) {
     county = esbaser::get_county(conn),
     catalog = esbaser::get_catalog(conn),
     coast = esbaser::get_coast(conn),
+    gender = esbaser::get_gender(conn),
     province = esbaser::get_province(conn),
-    species = esbaser::get_species(conn)
+    species = esbaser::get_species(conn),
+    material_type = esbaser::get_material_type(conn),
+    material_storage = esbaser::get_material_storage(conn),
+    project = esbaser::get_project(conn)
   )
   load_end <- Sys.time()
 
