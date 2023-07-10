@@ -8,7 +8,9 @@ if (any(installed_packages == FALSE)) {
   install.packages(packages[!installed_packages])
 }
 
-remotes::install_github("cgi-nrm/esbaser")
+if (isFALSE("esbaser" %in% rownames(installed.packages()))) {
+  remotes::install_github("cgi-nrm/esbaser")
+}
 
 # Must be loaded to be included in app
 library(shinyBS)
