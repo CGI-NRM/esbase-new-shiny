@@ -75,9 +75,13 @@ mod_provberedning_server <- function(id, db) {
   # $colnames   - The pretty colnames
   biologdata <- dataHolder()
 
-  # A vector of the currently selected accnrs as specified in the table in the biologdata tab
-  # TODO: Remove this and refactor to new pulling
-  selected_accnrs <- shiny::reactiveVal()
+  # A tibble with the added materials that the biodata should show, aswell as beeing choosable when preparing provs
+  added_material <- dataHolder(
+    mats = tibble(
+      type_id = character(0),
+      storage_id = character(0)
+    )
+  )
 
   # Containing provlista_table$dfs which is a list with prov-names as keys and the coresponding dataframe as values
   #                     and $metas which is a dataframe where the
@@ -318,15 +322,13 @@ mod_provberedning_server <- function(id, db) {
                           db = db,
                           selected = selected,
                           selected_update = selected_update,
-                          biologdata = biologdata)
+                          biologdata = biologdata,
+                          added_material = added_material)
     mod_provlista_server("provlista",
                          db = db,
                          selected = selected,
-                          selected_update = selected_update,
-                         provlista_table = provlista_table)
-    mod_validera_server("validera",
-                        db = db,
-                        selected = selected,
-                        selected_update = selected_update)
+                         selected_update = selected_update,
+                         provlista_table = provlista_table,
+                         added_material = added_material)
   })
 }

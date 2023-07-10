@@ -16,7 +16,7 @@ mod_provlista_ui <- function(id) {
   )
 }
 
-mod_provlista_server <- function(id, db, selected, selected_update, provlista_table) {
+mod_provlista_server <- function(id, db, selected, selected_update, provlista_table, added_material) {
   shiny::moduleServer(id, function(input, output, session) {
     loginfo("mod_provlista.R: module server start")
     # ---------- REACTIVE VARIABLES ----------
