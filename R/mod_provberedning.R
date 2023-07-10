@@ -101,8 +101,10 @@ mod_provberedning_server <- function(id, db) {
       # Update project choices from stödlista
       projects_vector <- db$project |> select(id) |> unlist(use.names = FALSE)
       names(projects_vector) <- db$project |> select(number, name) |> apply(1, paste_collapse)
+      names(projects_vector)[names(projects_vector) == ""] <- "-"
       shiny::updateSelectizeInput(session, "projekt", choices = projects_vector,
                                   selected = NA, server = TRUE)
+      logfine("mod_provberedning.R - update_select_inputs_with_stodlistor: finished")
     }
 
     create_download_handler <- function() {

@@ -291,13 +291,12 @@ mod_provlista_server <- function(id, db, selected, selected_update, provlista_ta
     update_select_inputs_with_stodlistor <- function(name) {
       logdebug("mod_provlista.R - update_select_inputs_with_stodlistor: called")
       # Update vävnad choices from stödlista
-      material_type <- esbaser::get_options_material_type()
-      session$userData$stodlistor$material_type_vector <- material_type[, "id", drop = TRUE]
-      names(session$userData$stodlistor$material_type_vector) <- material_type[, "representation", drop = TRUE]
-
-      shiny::updateSelectizeInput(session, prov_io(name, "vavnad"),
-                                  choices = session$userData$stodlistor$material_type_vector,
+      material_type_vector <- db$material_type |> select(id) |> unlist(use.names = FALSE)
+      names(material_type_vector) <- db$material_type |> select(swe_name) |> apply(1, paste_collapse)
+      material_type_vector <- material_type_vector[names(material_type_vector) != ""]
+      shiny::updateSelectizeInput(session, prov_io(name, "vavnad"), choices = material_type_vector,
                                   selected = NA, server = TRUE)
+      logfine("mod_provlista.R - update_select_inputs_with_stodlistor: finished")
     }
 
     delete_prov_section <- function(name) {

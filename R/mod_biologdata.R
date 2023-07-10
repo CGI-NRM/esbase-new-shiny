@@ -17,9 +17,10 @@ mod_biologdata_ui <- function(id) {
                     ),
       ),
       shiny::column(4,
-                    shiny::textInput(
+                    shiny::selectizeInput(
                       inputId = ns("provberedare"),
-                      label = "Provberedare, enhet"
+                      label = "Provberedare, enhet",
+                      choices = c(" ")
                     )
       ),
       shiny::column(4,
@@ -68,6 +69,32 @@ mod_biologdata_server <- function(id, db, selected, selected_update, biologdata)
     loginfo("mod_biologdata.R: module server start")
 
     # ---------- FUNCTIONS ----------
+    update_select_inputs_with_stodlistor <- function() {
+      logdebug("mod_biologdata.R - update_select_inputs_with_stodlistor: called")
+
+      # Update person choices from stödlista
+      person_vector <- db$person |> select(id) |> unlist(use.names = FALSE)
+      names(person_vector) <- db$person |> select(institution, firstname, lastname, town) |> apply(1, paste_collapse)
+      person_vector <- person_vector[names(person_vector) != ""]
+      shiny::updateSelectizeInput(session, "provberedare", choices = person_vector,
+                                  selected = NA, server = TRUE)
+
+      material_type_vector <- db$material_type |> select(id) |> unlist(use.names = FALSE)
+      names(material_type_vector) <- db$material_type |> select(swe_name) |> apply(1, paste_collapse)
+      material_type_vector <- material_type_vector[names(material_type_vector) != ""]
+      shiny::updateSelectizeInput(session, "add_material_vavnad", choices = material_type_vector,
+                                  selected = NA, server = TRUE)
+
+      material_storage <- db$material_storage |> arrange()
+      material_storage_vector <- db$material_storage |> select(id) |> unlist(use.names = FALSE)
+      names(material_storage_vector) <- db$material_storage |> select(name) |> apply(1, paste_collapse)
+      material_storage_vector <- material_storage_vector[names(material_storage_vector) != ""]
+      shiny::updateSelectizeInput(session, "add_material_storage", choices = material_storage_vector,
+                                  selected = NA, server = TRUE)
+
+      logfine("mod_biologdata.R - update_select_inputs_with_stodlistor: finished")
+    }
+
     update_static_data_from_accession_data <- function() {
       logdebug("mod_biologdata.R - update_static_data_from_accession_data: called")
 
@@ -177,7 +204,7 @@ mod_biologdata_server <- function(id, db, selected, selected_update, biologdata)
     }
 
     # ---------- ONE-TIME SETUP ----------
-    # update_select_inputs_with_stodlistor()
+    update_select_inputs_with_stodlistor()
 
     # ---------- OBSERVE EVENTS ----------
     shiny::observeEvent(input$details_table, {
