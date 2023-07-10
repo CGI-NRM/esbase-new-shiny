@@ -214,7 +214,7 @@ mod_provberedning_server <- function(id, db) {
         output$accnr_selection_message <- shiny::renderText("The AccNRs belong to different catalogs.")
         output$accnr_selection_dt <- render_dt_clean(
           data.frame(
-            id = accession_data |> select(id) |> esbaser::accdb_to_accnr(),
+            id = accession_data |> select(id) |> unlist() |> esbaser::accdb_to_accnr(),
             catalog = accession_data |> select(catalog_id) |> repr_catalog(db)
           ),
           colnames = c("AccNR", "Catalog"))
@@ -224,7 +224,7 @@ mod_provberedning_server <- function(id, db) {
         output$accnr_selection_message <- shiny::renderText("The AccNRs belong to different species.")
         output$accnr_selection_dt <- render_dt_clean(
           data.frame(
-            id = accession_data |> select(id) |> esbaser::accdb_to_accnr(),
+            id = accession_data |> select(id) |> unlist() |> esbaser::accdb_to_accnr(),
             species = accession_data |> select(species_id) |> repr_species(db)
           ),
           colnames = c("AccNR", "Species"))
@@ -234,7 +234,7 @@ mod_provberedning_server <- function(id, db) {
         output$accnr_selection_message <- shiny::renderText("The AccNRs belong to different localities.")
         output$accnr_selection_dt <- render_dt_clean(
           data.frame(
-            id = accession_data |> select(id) |> esbaser::accdb_to_accnr(),
+            id = accession_data |> select(id) |> unlist() |> esbaser::accdb_to_accnr(),
             locality = accession_data |> select(locality_id) |> repr_locality(db)
           ),
           colnames = c("AccNR", "Locality"))
