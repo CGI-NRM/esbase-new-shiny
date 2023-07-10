@@ -251,7 +251,7 @@ mod_provberedning_server <- function(id, db) {
       selected$accs_db <- series_db
 
       if (catalog_id == 0) { # Alla
-        shiny::showNotification("Cannot pull biodata for catalog 'Alla'.", duration = 10, type = "warning")
+        shiny::showNotification("Kan inte hämta biologdata för 'Alla'.", duration = 10, type = "warning")
         selected$bio <- tibble(accession_id = series_db)
       } else if (catalog_id == 1) { # Fågel
         selected$bio <- esbaser::get_bird_between(db$conn, selected$acc_min, selected$acc_max)
@@ -262,15 +262,15 @@ mod_provberedning_server <- function(id, db) {
       } else if (catalog_id == 4) { # Ägg
         selected$bio <- esbaser::get_egg_between(db$conn, selected$acc_min, selected$acc_max)
       } else if (catalog_id == 5) { # Mossa
-        shiny::showNotification("Cannot pull biodata for catalog 'Mossa'.", duration = 10, type = "warning")
+        shiny::showNotification("Kan inte hämta biologdata för 'Mossa'.", duration = 10, type = "warning")
         selected$bio <- tibble(accession_id = series_db)
       } else if (catalog_id == 6) { # Mussla
         selected$bio <- esbaser::get_clam_between(db$conn, selected$acc_min, selected$acc_max)
       } else if (catalog_id == 7) { # Övrigt
-        shiny::showNotification("Cannot pull biodata for catalog 'Övrigt'.", duration = 10, type = "warning")
+        shiny::showNotification("Kan inte hämta biologdata för 'Övrigt'.", duration = 10, type = "warning")
         selected$bio <- tibble(accession_id = series_db)
       } else {
-        shiny::showNotification(paste0("Unknown catalog_id: ", catalog_id, ". Cannot pull bio data"), duration = 10, type = "warning")
+        shiny::showNotification(paste0("Okänt catalog_id: ", catalog_id, ". Kan inte hämta biologdata."), duration = 10, type = "warning")
         selected$bio <- tibble(accession_id = series_db)
       }
 

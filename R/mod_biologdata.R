@@ -184,10 +184,8 @@ mod_biologdata_server <- function(id, db, selected, selected_update, biologdata)
 
       if (nrow(new_table) != nrow(biologdata$override) || nrow(new_table) != nrow(biologdata$override)) {
         shiny::showNotification(
-          paste0(
-            "You tried to add or remove rows from the specified 'Antal ind.'. Please modify",
-            " 'Antal ind.' to add your data."
-          ), type = "warning", duration = 30)
+          "Kan inte lägga till eller ta bort rader i tabellen.",
+          type = "warning", duration = 30)
         render_details_table()
         return()
       }

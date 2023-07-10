@@ -23,16 +23,16 @@ create_biologdata_table <- function(selected, db) {
     material_type_gonader_id <- db$material_type |> filter(swe_name == "gonader") |> select(id) |> unlist(use.names = FALSE)
 
     if (material_type_lever_id != 2) {
-      shiny::showNotification("Unexpected id for 'lever' material_type.", duration = 10, type = "warning")
+      shiny::showNotification("Oväntat id för 'lever' material_type.", duration = 10, type = "warning")
     }
     if (material_type_parasit_id != 50) {
-      shiny::showNotification("Unexpected id for 'parasit' material_type.", duration = 10, type = "warning")
+      shiny::showNotification("Oväntat id för 'parasit' material_type.", duration = 10, type = "warning")
     }
     if (material_type_skrott_id != 26) {
-      shiny::showNotification("Unexpected id for 'skrott' material_type.", duration = 10, type = "warning")
+      shiny::showNotification("Oväntat id för 'skrott' material_type.", duration = 10, type = "warning")
     }
     if (material_type_gonader_id != 16) {
-      shiny::showNotification("Unexpected id for 'gonader' material_type.", duration = 10, type = "warning")
+      shiny::showNotification("Oväntat id för 'gonader' material_type.", duration = 10, type = "warning")
     }
 
     df <- (
@@ -70,7 +70,7 @@ create_biologdata_table <- function(selected, db) {
                   "Parasit (g)", "Skrottvikt (g)")
 
   } else {
-    shiny::showNotification("Can only handle fish at the moment.", duration = 10, type = "error")
+    shiny::showNotification("Kan endast hantera fisk.", duration = 10, type = "error")
   }
 
   df[, "acc.id"] <- df |> select(acc.id) |> unlist() |> as.character() |> esbaser::accdb_to_accnr()

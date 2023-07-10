@@ -76,7 +76,7 @@ mod_provlista_server <- function(id, db, selected, selected_update, provlista_ta
       if (is.null(provlista_table$dfs[[name]]) || nrow(new_table) != nrow(provlista_table$dfs[[name]])) {
         shiny::showNotification(
           paste0(
-            "Cannot add rows to this table. Add more rows under 'Biologdata' to increase the number of rows in this table"
+            "Kan inte lägga till eller ta bort rader i tabellen."
           ), type = "warning", duration = 30)
         render_provid_table(name)
         return()
@@ -124,11 +124,10 @@ mod_provlista_server <- function(id, db, selected, selected_update, provlista_ta
           is.null(input[[prov_io(name, "analyslab")]])) {
         shiny::showNotification(
           paste0(
-            "Cannot render provid_table for ",
+            "Kan inte rendrera provid_table för ",
             name,
-            " due to missing UI input. Please submit a ",
-            "ticket to https://github.com/CGI-NRM/esbase-new-shiny/ ",
-            "with step steps to produce this issue."
+            " då den saknar UI. Vänligen lägg till en issue på ",
+            "https://github.com/CGI-NRM/esbase-new-shiny/",
           ), type = "error", duration = 20)
         return()
       }
@@ -161,7 +160,7 @@ mod_provlista_server <- function(id, db, selected, selected_update, provlista_ta
       logdebug("mod_provlista.R - klona_provid_fran_forsta: called")
       if (!esbaser::provid_validate(provlista_table$dfs[[name]][1, "provid"])) {
         shiny::showNotification(
-          "Invalid or missing ProvID in first row. Please enter on the form 'Q2022-12345'",
+          "Ogiltigt eller saknat ProvID i första rader. Vänligen skriv i enligt 'Q2022-12345.'",
           type = "warning")
         return()
       }
@@ -176,7 +175,7 @@ mod_provlista_server <- function(id, db, selected, selected_update, provlista_ta
       logdebug("mod_provlista.R - sekvens_provid_fran_forsta: called")
       if (!esbaser::provid_validate(provlista_table$dfs[[name]][1, "provid"])) {
         shiny::showNotification(
-          "Invalid or missing ProvID in first row. Please enter on the form 'Q2022-12345'",
+          "Ogiltigt eller saknat ProvID i första rader. Vänligen skriv i enligt 'Q2022-12345.'",
           type = "warning")
         return()
       }
@@ -199,10 +198,9 @@ mod_provlista_server <- function(id, db, selected, selected_update, provlista_ta
       if (name %in% provs()) {
         shiny::showNotification(
           paste0(
-            "Cannot add multilpe prov_sections with the same name, '",
+            "Kan inte lägga till flera provsektioner med samma namn, '",
             name,
-            "', Please submit an issue detailing the steps you took to reach ",
-            "this error on https://github.com/CGI-NRM/esbase-new-shiny/"
+            "', vänligen lägg till en issue på https://github.com/CGI-NRM/esbase-new-shiny/"
           ),
           type = "error", duration = 30)
         return()
@@ -303,7 +301,7 @@ mod_provlista_server <- function(id, db, selected, selected_update, provlista_ta
       logdebug("mod_provlista.R - delete_prov_section: called")
 
       if (length(provs()) <= 1) {
-        shiny::showNotification("There is only one prov left, cannot delete it.", duration = 10)
+        shiny::showNotification("Det är endast en provsektion kvar, kan inte ta bort den.", duration = 10)
         return()
       }
 
@@ -335,8 +333,8 @@ mod_provlista_server <- function(id, db, selected, selected_update, provlista_ta
       if (length(provs()) == 0) {
         shiny::showNotification(
           paste0(
-            "Could not create a new prov-section, no initial prov_section exists. ",
-            "This should not happen, please submit an issue to https://github.com",
+            "Kunde inte skapa en ny prov-sektion. Ingen provsektion att utgå från kunde hittas. ",
+            "Detta borde inte hända, vänligen lägg till en issue på https://github.com",
             "/CGI-NRM/esbase-new-shiny/."
           ), type = "error", duration = 20)
       }
