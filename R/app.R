@@ -75,7 +75,8 @@ server <- function(input, output, session) {
     material_type = esbaser::get_material_type(conn),
     material_storage = esbaser::get_material_storage(conn),
     project = esbaser::get_project(conn),
-    person = esbaser::get_person(conn)
+    person = esbaser::get_person(conn),
+    analysis_type = esbaser::get_analysis_type(conn)
   )
   load_end <- Sys.time()
 

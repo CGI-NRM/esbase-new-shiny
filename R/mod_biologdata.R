@@ -20,6 +20,7 @@ mod_biologdata_ui <- function(id) {
                     shiny::selectizeInput(
                       inputId = ns("provberedare"),
                       label = "Provberedare, enhet",
+                      options = list(placeholder = "Provberedare"),
                       choices = c(" ")
                     )
       ),
@@ -251,8 +252,8 @@ mod_biologdata_server <- function(id, db, selected, selected_update, biologdata,
         return()
       }
 
-      storage_id <- ifelse(input$add_material_storage == "", 0, as.numeric(input$add_material_storage))
-      type_id <- as.numeric(input$add_material_vavnad)
+      storage_id <- ifelse(input$add_material_storage == "", 0, as.integer(input$add_material_storage))
+      type_id <- as.integer(input$add_material_vavnad)
 
       if (added_material$mats |> filter(type_id == !!type_id, storage_id == !!storage_id) |> nrow() > 0) {
         shiny::showNotification(
@@ -275,6 +276,7 @@ mod_biologdata_server <- function(id, db, selected, selected_update, biologdata,
           storage_id = storage_id
         )
       )
+      added_material$update(added_material$update() + 1)
 
       logfine("mod_biologdata.R - add_material: finished")
     }

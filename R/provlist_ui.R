@@ -23,9 +23,10 @@ provlist_ui <- function(prov_ns, name) {
       shiny::h2(name, style = "color: #888888;"),
       shiny::fluidRow(
         shiny::column(4,
-                      shiny::selectInput(inputId = prov_ns("analystyp"),
-                                         label = "Analystyp",
-                                         choices = c("", "Hg", "Metall", "CLC+BFR", "Dioxin", "PFAS")
+                      shiny::selectizeInput(inputId = prov_ns("analystyp"),
+                                            label = "Analystyp",
+                                            options = list(placeholder = "Analystyp"),
+                                            choices = c(" ")
                       )
         ),
         shiny::column(4,
@@ -35,9 +36,10 @@ provlist_ui <- function(prov_ns, name) {
                       )
         ),
         shiny::column(4,
-                      shiny::selectInput(inputId = prov_ns("analytiker"),
-                                         label = "Analytiker",
-                                         choices = c("", "Marcus Sundbom", "Marie Aune", "Peter Haglund", "Lutz Ahrens")
+                      shiny::selectizeInput(inputId = prov_ns("analytiker"),
+                                            label = "Analytiker",
+                                            options = list(placeholder = "Analytiker"),
+                                            choices = c(" ")
                       )
         )
       ),

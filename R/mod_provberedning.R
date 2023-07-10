@@ -78,9 +78,10 @@ mod_provberedning_server <- function(id, db) {
   # A tibble with the added materials that the biodata should show, aswell as beeing choosable when preparing provs
   added_material <- dataHolder(
     mats = tibble(
-      type_id = character(0),
-      storage_id = character(0)
-    )
+      type_id = integer(0),
+      storage_id = integer(0)
+    ),
+    update = shiny::reactiveVal(0)
   )
 
   # Containing provlista_table$dfs which is a list with prov-names as keys and the coresponding dataframe as values

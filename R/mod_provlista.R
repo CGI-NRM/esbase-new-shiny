@@ -289,11 +289,30 @@ mod_provlista_server <- function(id, db, selected, selected_update, provlista_ta
     update_select_inputs_with_stodlistor <- function(name) {
       logdebug("mod_provlista.R - update_select_inputs_with_stodlistor: called")
       # Update vävnad choices from stödlista
-      material_type_vector <- db$material_type |> select(id) |> unlist(use.names = FALSE)
-      names(material_type_vector) <- db$material_type |> select(swe_name) |> apply(1, paste_collapse)
-      material_type_vector <- material_type_vector[names(material_type_vector) != ""]
-      shiny::updateSelectizeInput(session, prov_io(name, "vavnad"), choices = material_type_vector,
+
+      # Only allow choices added in added_material
+      material_vector <- seq_len(nrow(added_material$mats))
+      names(material_vector) <- (added_material$mats |>
+                                 left_join(db$material_type |> rename_w_prefix("type."), by = join_by(type_id == type.id)) |>
+                                 left_join(db$material_storage |> rename_w_prefix("storage."), by = join_by(storage_id == storage.id)) |>
+                                 select(type.swe_name, storage.name) |>
+                                 apply(1, paste_collapse)
+      )
+      shiny::updateSelectizeInput(session, prov_io(name, "vavnad"), choices = material_vector,
                                   selected = NA, server = TRUE)
+
+      person_vector <- db$person |> select(id) |> unlist(use.names = FALSE)
+      names(person_vector) <- db$person |> select(institution, firstname, lastname, town) |> apply(1, paste_collapse)
+      person_vector <- person_vector[names(person_vector) != ""]
+      shiny::updateSelectizeInput(session, prov_io(name, "analytiker"), choices = person_vector,
+                                  selected = NA, server = TRUE)
+
+      analysis_type_vector <- db$analysis_type |> select(id) |> unlist(use.names = FALSE)
+      names(analysis_type_vector) <- db$analysis_type |> select(name) |> apply(1, paste_collapse)
+      analysis_type_vector <- analysis_type_vector[names(analysis_type_vector) != ""]
+      shiny::updateSelectizeInput(session, prov_io(name, "analystyp"), choices = analysis_type_vector,
+                                  selected = NA, server = TRUE)
+
       logfine("mod_provlista.R - update_select_inputs_with_stodlistor: finished")
     }
 
@@ -321,7 +340,6 @@ mod_provlista_server <- function(id, db, selected, selected_update, provlista_ta
 
     # ---------- ONE-TIME SETUP ----------
     add_new_prov_section_observe_events("prov1")
-    update_select_inputs_with_stodlistor("prov1")
 
     # ---------- OBSERVE EVENTS ----------
     shiny::observeEvent(input$set_limniska, {
@@ -370,5 +388,11 @@ mod_provlista_server <- function(id, db, selected, selected_update, provlista_ta
       render_provid_table(prov)
       logfine("mod_provlista.R - observeEvent(input$prov_tabset_panel, {}): finished")
     })
+
+    shiny::observeEvent(added_material$update(), {
+      for (name in provs()) {
+        update_select_inputs_with_stodlistor(name)
+      }
+    }, ignoreInit = TRUE)
   })
 }
