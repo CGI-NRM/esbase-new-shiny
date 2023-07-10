@@ -17,8 +17,8 @@ repr_locality <- function(x, db) {
   left_join(db$country |> rename_w_prefix("country."), by = join_by(country_id == country.id)) |>
   left_join(db$province |> rename_w_prefix("province."), by = join_by(province_id == province.id)) |>
   left_join(db$coast |> rename_w_prefix("coast."), by = join_by(coast_id == coast.id)) |>
-  select(country.swe_name, county.swe_name, county.eng_name, coast.swe_name,
-         coast.eng_name, province.swe_name, province.eng_name, closecity, name) |>
+  select(name, closecity, county.swe_name, county.eng_name, coast.swe_name,
+         coast.eng_name, province.swe_name, province.eng_name) |>
   apply(1, paste_collapse)
 }
 
@@ -26,7 +26,7 @@ repr_species <- function(x, db) {
   x |>
   left_join(db$species |> rename_w_prefix("species."), by = join_by(species_id == species.id)) |>
   left_join(db$catalog |> rename_w_prefix("catalog."), by = join_by(species.catalog_id == catalog.id)) |>
-  select(catalog.name, species.swe_name, species.eng_name, species.lat_name) |>
+  select(species.swe_name, species.eng_name, species.lat_name) |>
   apply(1, paste_collapse)
 }
 
