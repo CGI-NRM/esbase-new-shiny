@@ -16,7 +16,7 @@ mod_provlista_ui <- function(id) {
   )
 }
 
-mod_provlista_server <- function(id, db, selected, selected_update, provlista_table, added_material) {
+mod_provlista_server <- function(id, db, selected, provlista_table, added_material) {
   shiny::moduleServer(id, function(input, output, session) {
     loginfo("mod_provlista.R: module server start")
     # ---------- REACTIVE VARIABLES ----------
@@ -226,7 +226,7 @@ mod_provlista_server <- function(id, db, selected, selected_update, provlista_ta
 
 
       # This handles the first render aswell when the UI has been renderer, and the input$ has been initialized
-      # Except for the initial prov1, where the input already exists and the observeEvent for selected_update()
+      # Except for the initial prov1, where the input already exists and the observeEvent for selected$update()
       #     creates and does the initial render
       o1 <- shiny::observeEvent({
         input[[prov_io(name, "analyslab")]]
@@ -363,8 +363,8 @@ mod_provlista_server <- function(id, db, selected, selected_update, provlista_ta
       logfine("mod_provlista.R - observeEvent(input$lagg_till_prov, {}): finished")
     })
 
-    shiny::observeEvent(selected_update(), {
-      logdebug("mod_provlista.R - observeEvent(selected_update(), {}): called")
+    shiny::observeEvent(selected$update(), {
+      logdebug("mod_provlista.R - observeEvent(selected$update(), {}): called")
       # TODO: If accnr changed, remove row
       # TODO: If length(selected$accs_db) change, do not clear all data, only add the necessary new rows
       current_dfs <- provlista_table$dfs
@@ -377,7 +377,7 @@ mod_provlista_server <- function(id, db, selected, selected_update, provlista_ta
           handle_provid_table_change(name, current_dfs[[name]])
         }
       }
-      logfine("mod_provlista.R - observeEvent(selected_update(), {}): finished")
+      logfine("mod_provlista.R - observeEvent(selected$update(), {}): finished")
     })
 
     shiny::observeEvent(input$prov_tabset_panel, {

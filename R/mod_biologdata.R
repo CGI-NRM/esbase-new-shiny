@@ -98,7 +98,7 @@ mod_biologdata_ui <- function(id) {
   )
 }
 
-mod_biologdata_server <- function(id, db, selected, selected_update, biologdata, added_material) {
+mod_biologdata_server <- function(id, db, selected, biologdata, added_material) {
 
   shiny::moduleServer(id, function(input, output, session) {
     loginfo("mod_biologdata.R: module server start")
@@ -290,7 +290,7 @@ mod_biologdata_server <- function(id, db, selected, selected_update, biologdata,
       handle_biologdata_table_update(new_table)
     })
 
-    shiny::observeEvent(selected_update(), {
+    shiny::observeEvent(selected$update(), {
       handle_changed_accnrs()
       update_static_data_from_accession_data()
     }, ignoreNULL = FALSE)

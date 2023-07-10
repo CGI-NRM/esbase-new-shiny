@@ -57,6 +57,7 @@ mod_provberedning_server <- function(id, db) {
   # $bio           - clam/fish/mammal etc table/tibble of selected accession_id
   # $mat           - all materials that points to selected accession_id (can be multilpe per accession)
   # $specimen      - all specimen that points to selected accession_id (one per accession)
+  # $update        - a reactive val that should be increased when this data is updated
   selected <- dataHolder(
     acc = tibble(),
     accs_db = character(0),
@@ -64,9 +65,9 @@ mod_provberedning_server <- function(id, db) {
     acc_max = "",
     bio = tibble(),
     mat = tibble(),
-    specimen = tibble()
+    specimen = tibble(),
+    update = shiny::reactiveVal(0)
   )
-  selected_update <- shiny::reactiveVal(0)
 
   # A holder for combined biologdata
   # $df         - The combined data from the database
@@ -149,7 +150,7 @@ mod_provberedning_server <- function(id, db) {
       selected$specimen <- tibble()
       selected$material <- tibble()
 
-      selected_update(selected_update() + 1)
+      selected$update(selected$update() + 1)
       logfine("mod_provberedning.R - deselect_selected_accnrs: finished")
     }
 
@@ -282,7 +283,7 @@ mod_provberedning_server <- function(id, db) {
       selected$specimen <- esbaser::get_specimen_between(db$conn, selected$acc_min, selected$acc_max)
       selected$material <- esbaser::get_material_between(db$conn, selected$acc_min, selected$acc_max)
 
-      selected_update(selected_update() + 1)
+      selected$update(selected$update() + 1)
     }
 
     # ---------- ONE-TIME SETUP ----------
@@ -322,13 +323,11 @@ mod_provberedning_server <- function(id, db) {
     mod_biologdata_server("biologdata",
                           db = db,
                           selected = selected,
-                          selected_update = selected_update,
                           biologdata = biologdata,
                           added_material = added_material)
     mod_provlista_server("provlista",
                          db = db,
                          selected = selected,
-                         selected_update = selected_update,
                          provlista_table = provlista_table,
                          added_material = added_material)
   })
