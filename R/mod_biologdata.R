@@ -117,6 +117,15 @@ mod_biologdata_server <- function(id, db, selected, selected_update, biologdata)
 
       shiny::req(biologdata$override)
 
+      if (isFALSE("acc.id" %in% colnames(biologdata$override))) {
+        output$details_table <- rhandsontable::renderRHandsontable(
+          rhandsontable::rhandsontable(data.frame()) |>
+          rhandsontable::hot_context_menu(allowRowEdit = FALSE, allowColEdit = FALSE, allowComments = FALSE, allowCustomBorders = FALSE) |>
+          rhot_disable_context_menu()
+        )
+        return()
+      }
+
       df <- biologdata$override
 
       # TODO: Color the cells overridden with another color (orange?). Maybe only if they override another value,
