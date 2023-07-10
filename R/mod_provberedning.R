@@ -39,16 +39,10 @@ mod_provberedning_ui <- function(id) {
              shiny::tabsetPanel(
                type = "tabs",
                shiny::tabPanel(title = "Biologdata",
-                               shiny::wellPanel(
-                                 mod_biologdata_ui(ns("biologdata")))
+                                 mod_biologdata_ui(ns("biologdata"))
                ),
                shiny::tabPanel(title = "Provlista",
-                               shiny::wellPanel(
-                                 mod_provlista_ui(ns("provlista")))
-               ),
-               shiny::tabPanel(title = "Validera",
-                               shiny::wellPanel(
-                                 mod_validera_ui(ns("validera")))
+                                 mod_provlista_ui(ns("provlista"))
                )
              )
              )
