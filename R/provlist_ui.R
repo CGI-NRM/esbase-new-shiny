@@ -27,7 +27,7 @@ provlist_ui <- function(prov_ns, name) {
                         inputId = prov_ns("analystyp"),
                         label = "Analystyp",
                         options = list(placeholder = "Analystyp", highlight = FALSE),
-                        choices = c(" ")
+                        choices = c("")
                       )
         ),
         shiny::column(4,
@@ -41,7 +41,7 @@ provlist_ui <- function(prov_ns, name) {
                         inputId = prov_ns("analytiker"),
                         label = "Analytiker",
                         options = list(placeholder = "Analytiker", highlight = FALSE),
-                        choices = c(" ")
+                        choices = c("")
                       )
         )
       ),

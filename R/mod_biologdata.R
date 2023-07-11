@@ -21,7 +21,7 @@ mod_biologdata_ui <- function(id) {
                       inputId = ns("provberedare"),
                       label = "Provberedare, enhet",
                       options = list(placeholder = "Provberedare", highlight = FALSE),
-                      choices = c(" ")
+                      choices = c("")
                     )
       ),
       shiny::column(4,
