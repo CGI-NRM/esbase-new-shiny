@@ -4,9 +4,12 @@ services:
   esbase-shiny:
     build: .
     image: esbase-shiny:latest
+    container_name: esbase-shiny
     ports:
       - "3838:3838"
         #    volumes:
         #  - type: bind
         # source: /home/elias/code/nrm/esbase-new-shiny/R
         #target: /R
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
