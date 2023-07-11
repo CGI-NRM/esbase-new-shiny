@@ -43,14 +43,15 @@ mod_provlista_server <- function(id, db, selected, provlista_table, added_materi
       paste0(name, "_", id)
     }
 
-    provid_table_cols <- c("accnr", "provid", "aces", "delvikt", "provvikt")
-    provid_table_cols_pretty <- c("Acc.nr.", "ProvID", "ACES NR", "Delvikt (g)", "Provvikt (g)")
+    provid_table_cols <- c("check", "accnr", "provid", "aces", "delvikt", "provvikt")
+    provid_table_cols_pretty <- c("", "Acc.nr.", "ProvID", "ACES NR", "Delvikt (g)", "Provvikt (g)")
 
     # Create a new provid_table dataframe with default/empty values and place in provid_table
     create_provid_table <- function(name) {
       logdebug("mod_provlista.R - create_provid_table: called")
       num <- length(selected$accs_db)
       provlista_table$dfs[[name]] <- data.frame(
+        check = rep(TRUE, num),
         accnr = esbaser::accdb_to_accnr(selected$accs_db),
         provid = rep("", num),
         aces = rep("", num),
@@ -137,21 +138,32 @@ mod_provlista_server <- function(id, db, selected, provlista_table, added_materi
         cols <- c(cols, "aces")
       }
       if (input[[prov_io(name, "homogenat")]]) {
-        cols <- c(cols, "delvikt")
+        cols <- c("check", cols, "delvikt")
       }
       cols <- c(cols, "provvikt")
 
       df <- provlista_table$dfs[[name]][cols]
 
       output[[prov_io(name, "provid_table")]] <- rhandsontable::renderRHandsontable({
-        rhandsontable::rhandsontable(df, rowHeaders = FALSE, overflow = "visible", maxRows = nrow(df)) |>
+        hot <- (
+          rhandsontable::rhandsontable(df, rowHeaders = FALSE, overflow = "visible", maxRows = nrow(df)) |>
           rhandsontable::hot_context_menu(allowRowEdit = FALSE, allowColEdit = FALSE, allowComments = FALSE, allowCustomBorders = FALSE) |>
           rhandsontable::hot_col("accnr", readOnly = TRUE) |>
           rhandsontable::hot_col("provid", renderer = rhot_renderer_validate_provid_gray_bg_on_read_only) |>
           rhandsontable::hot_col(which(colnames(df) != "provid"), renderer = rhot_renderer_gray_bg_on_read_only) |>
           rhandsontable::hot_row(which(selected$accs_db == ""), readOnly = TRUE) |>
           rhot_set_visual_colheaders(provid_table_cols_pretty[match(cols, provid_table_cols)]) |>
-          rhot_disable_context_menu()
+          rhot_disable_context_menu())
+
+        for (row in seq_len(nrow(df))) {
+          if (isFALSE(df[row, "check"])) {
+            for (col in which(colnames(df) != "check")) {
+              hot <- rhandsontable::hot_cell(hot, row, col, readOnly = TRUE)
+            }
+          }
+        }
+
+        hot
       })
       logfine("mod_provlista.R - render_provid_table: finished")
     }
@@ -167,6 +179,7 @@ mod_provlista_server <- function(id, db, selected, provlista_table, added_materi
 
       new_table <- provlista_table$dfs[[name]]
       new_table[selected$accs_db != "", "provid"] <- provlista_table$dfs[[name]][1, "provid"]
+      new_table[!new_table$check, "provid"] <- ""
       handle_provid_table_change(name, new_table)
       logfine("mod_provlista.R - klona_provid_fran_forsta: finished")
     }
@@ -188,6 +201,7 @@ mod_provlista_server <- function(id, db, selected, provlista_table, added_materi
           \(i) esbaser::provid_sprint(esbaser::provid_add(parsed, i - 1))
         )
       )
+      new_table[!new_table$check, "provid"] <- ""
 
       handle_provid_table_change(name, new_table)
       logfine("mod_provlista.R - sekvens_provid_fran_forsta: finished")
@@ -251,6 +265,9 @@ mod_provlista_server <- function(id, db, selected, provlista_table, added_materi
 
       o5 <- shiny::observeEvent(input[[prov_io(name, "homogenat")]], {
         provlista_table$metas[name, "homogenat"] <- input[[prov_io(name, "homogenat")]]
+        if (!is.null(provlista_table$dfs[[name]])) {
+          provlista_table$dfs[[name]]$check <- TRUE
+        }
       })
 
       o6 <- shiny::observeEvent(input[[prov_io(name, "analyslab")]], {
