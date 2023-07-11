@@ -53,7 +53,19 @@ ui <- shiny::fluidPage(
 server <- function(input, output, session) {
   loginfo("app.R - server: server started")
 
-  conn <- esbaser::connect_to_database()
+  conn <- tryCatch(
+    esbaser::connect_to_database(),
+    error = function(cond) {
+      logdebug(paste0("Could not connect to database:", cond))
+      shiny::showNotification(paste0("Could not connect to database: ", cond), duration = NULL, type = "error")
+      return(FALSE)
+    }
+  )
+
+  if (isFALSE(conn)) {
+    loginfo("app.R - server: could not connect to database. Aborting")
+    return()
+  }
   loginfo("app.R - server: connection made to database")
 
   shiny::onStop(function() {
