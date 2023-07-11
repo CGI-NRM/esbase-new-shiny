@@ -105,7 +105,7 @@ mod_biologdata_server <- function(id, db, selected, biologdata, added_material) 
 
       # Update person choices from stödlista
       person_vector <- db$person |> select(id) |> unlist(use.names = FALSE)
-      names(person_vector) <- db$person |> select(institution, firstname, lastname, town) |> apply(1, paste_collapse)
+      names(person_vector) <- db$person |> select(institution, firstname, lastname, town) |> apply(1, paste_collapse, collapse = " ")
       person_vector <- person_vector[names(person_vector) != ""]
       shiny::updateSelectizeInput(session, "provberedare", choices = person_vector,
                                   selected = NA, server = TRUE)
@@ -114,14 +114,14 @@ mod_biologdata_server <- function(id, db, selected, biologdata, added_material) 
       names(material_type_vector) <- db$material_type |> select(swe_name) |> apply(1, paste_collapse)
       material_type_vector <- material_type_vector[names(material_type_vector) != ""]
       shiny::updateSelectizeInput(session, "add_material_vavnad", choices = material_type_vector,
-                                  selected = NA, server = TRUE)
+                                  selected = NA, server = FALSE)
 
       material_storage <- db$material_storage |> arrange()
       material_storage_vector <- db$material_storage |> select(id) |> unlist(use.names = FALSE)
       names(material_storage_vector) <- db$material_storage |> select(name) |> apply(1, paste_collapse)
       material_storage_vector <- material_storage_vector[names(material_storage_vector) != ""]
       shiny::updateSelectizeInput(session, "add_material_storage", choices = material_storage_vector,
-                                  selected = NA, server = TRUE)
+                                  selected = NA, server = FALSE)
 
       logfine("mod_biologdata.R - update_select_inputs_with_stodlistor: finished")
     }
