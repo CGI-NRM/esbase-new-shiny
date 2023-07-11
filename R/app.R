@@ -41,6 +41,7 @@ source("mod_biologdata.R")
 source("utils_biologdata.R")
 source("mod_provberedning.R")
 source("mod_provlista.R")
+source("mod_material.R")
 
 # Shiny App
 ui <- shiny::fluidPage(

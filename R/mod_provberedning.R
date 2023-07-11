@@ -39,10 +39,19 @@ mod_provberedning_ui <- function(id) {
              shiny::tabsetPanel(
                type = "tabs",
                shiny::tabPanel(title = "Biologdata",
+                               shiny::wellPanel(
                                  mod_biologdata_ui(ns("biologdata"))
+                               )
+               ),
+               shiny::tabPanel(title = "Material",
+                               shiny::wellPanel(
+                                 mod_material_ui(ns("material"))
+                               )
                ),
                shiny::tabPanel(title = "Provlista",
+                               shiny::wellPanel(
                                  mod_provlista_ui(ns("provlista"))
+                               )
                )
              )
              )
@@ -324,6 +333,9 @@ mod_provberedning_server <- function(id, db) {
                           selected = selected,
                           biologdata = biologdata,
                           added_material = added_material)
+    mod_material_server("material",
+                        db = db,
+                        selected = selected)
     mod_provlista_server("provlista",
                          db = db,
                          selected = selected,
