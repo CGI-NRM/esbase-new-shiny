@@ -19,7 +19,7 @@ mod_provberedning_ui <- function(id) {
                  inputId = ns("projekt"),
                  label = "Projekt /Program",
                  choices = c(""),
-                 options = list(placeholder = "Projekt"),
+                 options = list(placeholder = "Projekt", highlight = FALSE),
                  width = "100%"
                ),
                shiny::fluidRow(

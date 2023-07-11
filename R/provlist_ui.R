@@ -23,10 +23,11 @@ provlist_ui <- function(prov_ns, name) {
       shiny::h2(name, style = "color: #888888;"),
       shiny::fluidRow(
         shiny::column(4,
-                      shiny::selectizeInput(inputId = prov_ns("analystyp"),
-                                            label = "Analystyp",
-                                            options = list(placeholder = "Analystyp"),
-                                            choices = c(" ")
+                      shiny::selectizeInput(
+                        inputId = prov_ns("analystyp"),
+                        label = "Analystyp",
+                        options = list(placeholder = "Analystyp", highlight = FALSE),
+                        choices = c(" ")
                       )
         ),
         shiny::column(4,
@@ -36,10 +37,11 @@ provlist_ui <- function(prov_ns, name) {
                       )
         ),
         shiny::column(4,
-                      shiny::selectizeInput(inputId = prov_ns("analytiker"),
-                                            label = "Analytiker",
-                                            options = list(placeholder = "Analytiker"),
-                                            choices = c(" ")
+                      shiny::selectizeInput(
+                        inputId = prov_ns("analytiker"),
+                        label = "Analytiker",
+                        options = list(placeholder = "Analytiker", highlight = FALSE),
+                        choices = c(" ")
                       )
         )
       ),
@@ -51,12 +53,11 @@ provlist_ui <- function(prov_ns, name) {
                   )
     ),
     shiny::column(4,
-                  shiny::selectizeInput(inputId = prov_ns("vavnad"),
-                                        label = "Vävnad",
-                                        choices = c(""),
-                                        options = list(
-                                          placeholder = "Vävnad/Material typ"
-                                        )
+                  shiny::selectizeInput(
+                    inputId = prov_ns("vavnad"),
+                    label = "Vävnad",
+                    choices = c(""),
+                    options = list(placeholder = "Vävnad/Material typ", highlight = FALSE)
                   )
     ),
     shiny::column(4,

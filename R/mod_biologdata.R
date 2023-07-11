@@ -20,7 +20,7 @@ mod_biologdata_ui <- function(id) {
                     shiny::selectizeInput(
                       inputId = ns("provberedare"),
                       label = "Provberedare, enhet",
-                      options = list(placeholder = "Provberedare"),
+                      options = list(placeholder = "Provberedare", highlight = FALSE),
                       choices = c(" ")
                     )
       ),
@@ -69,9 +69,7 @@ mod_biologdata_ui <- function(id) {
                                                shiny::selectizeInput(
                                                  inputId = ns("add_material_vavnad"),
                                                  label = "Materialtyp",
-                                                 options = list(
-                                                   placeholder = "Materialtyp"
-                                                 ),
+                                                 options = list(placeholder = "Materialtyp", highlight = FALSE),
                                                  choices = c("")
                                                )
                                  ),
@@ -79,9 +77,7 @@ mod_biologdata_ui <- function(id) {
                                                shiny::selectizeInput(
                                                  inputId = ns("add_material_storage"),
                                                  label = "Förvaringsplats",
-                                                 options = list(
-                                                   placeholder = "Förvaringsplats"
-                                                 ),
+                                                 options = list(placeholder = "Förvaringsplats", highlight = FALSE),
                                                  choices = c("")
                                                )
                                  ),
