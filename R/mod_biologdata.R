@@ -116,7 +116,7 @@ mod_biologdata_server <- function(id, db, selected, biologdata, added_material) 
       shiny::updateSelectizeInput(session, "add_material_vavnad", choices = material_type_vector,
                                   selected = NA, server = FALSE)
 
-      material_storage <- db$material_storage |> arrange()
+      material_storage <- db$material_storage |> arrange(sortbyme)
       material_storage_vector <- db$material_storage |> select(id) |> unlist(use.names = FALSE)
       names(material_storage_vector) <- db$material_storage |> select(name) |> apply(1, paste_collapse)
       material_storage_vector <- material_storage_vector[names(material_storage_vector) != ""]
