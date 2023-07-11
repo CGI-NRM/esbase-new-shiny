@@ -120,7 +120,6 @@ mod_provberedning_server <- function(id, db) {
                        selected = selected,
                        biologdata = biologdata,
                        provlistas = provlista_table$dfs,
-                       provlistas_colnames = lapply(provlista_table$dfs, colnames),
                        provlistas_metas = provlista_table$metas
         )
       }

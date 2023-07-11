@@ -7,7 +7,6 @@ report_content <- function(
   selected,
   biologdata,
   provlistas,
-  provlistas_colnames,
   provlistas_metas
 ) {
   # Place in tempdir since we don't have write access when deployed
@@ -18,7 +17,6 @@ report_content <- function(
     selected = selected,
     biologdata = biologdata,
     provlistas = provlistas,
-    provlistas_colnames = provlistas_colnames,
     provlistas_metas = provlistas_metas
   )
 

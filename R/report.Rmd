@@ -11,7 +11,6 @@ params:
     selected: NA
     biologdata: NA
     provlistas: NA
-    provlistas_colnames: NA
     provlistas_metas: NA
 header-includes:
   - \usepackage{booktabs}
