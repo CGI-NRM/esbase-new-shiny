@@ -407,9 +407,11 @@ mod_provlista_server <- function(id, db, selected, provlista_table, added_materi
     })
 
     shiny::observeEvent(added_material$update(), {
+      logdebug("mod_provlista.R - observeEvent(added_material$update(), {}): called")
       for (name in provs()) {
         update_select_inputs_with_stodlistor(name)
       }
+      logfine("mod_provlista.R - observeEvent(added_material$update(), {}): finished")
     }, ignoreInit = TRUE)
   })
 }
