@@ -46,3 +46,39 @@ create_biologdata_table <- function(db, selected) {
 
   list(df = df, formats = formats, colnames = colnames)
 }
+
+#' Update Biologdata Overrides From Biologdata Table
+#'
+#' Note that both new_table$acc.id and selected$acc$id must match.
+#'
+#' @param db A db dataHolder which contains $conn and helpertables
+#' @param selected A dataHolder containing $acc, $bio, $specimen, $material, $*_override. As created in mod_provberedning_server.
+#' @param new_table The modified table edited by the user. A modified version of the df returned by \link[esbaser]{create_biologdata_table}
+#' @return A boolean of success
+update_biologdata_overrides <- function(db, selected, new_table) {
+  if (selected$acc |> select(catalog_id) |> unique() |> length() != 1) {
+    stop("Not all catalog_ids are the same.")
+    return(FALSE)
+  }
+
+  if (any(selected$acc$id != esbaser::accnr_to_accdb(new_table$acc.id))) {
+    stop("Acc.id does not match")
+    return(FALSE)
+  }
+
+  catalog_id <- selected$acc |> select(catalog_id) |> first()
+  if (catalog_id == 2) { # fish
+    selected$specimen_override$age_start <- new_table$specimen.age_start
+    selected$specimen_override$age_end <- new_table$specimen.age_end
+    selected$specimen_override$weight <- new_table$specimen.weight
+    selected$bio_override$totallength <- new_table$bio.totallength
+    selected$bio_override$bodylength <- new_table$bio.bodylength
+    selected$bio_override$gender_id <- new_table$bio.gender |> factor(levels = db$gender$swe_name, labels = db$gender$id)
+    selected$bio_override$gonadweight <- new_table$bio.gonadweight
+    selected$bio_override$liverweight <- new_table$bio.liverweight
+  } else {
+    shiny::showNotification("Kan endast hantera fisk.", duration = 10, type = "error")
+  }
+
+  return(TRUE)
+}

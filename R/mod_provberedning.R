@@ -59,21 +59,24 @@ mod_provberedning_ui <- function(id) {
 
 mod_provberedning_server <- function(id, db, account) {
   # A new holder to move into, to replace selected_accnrs, biologdata_table
-  # $acc           - accession table/tibble of selected
-  # $accs_db       - vector of selected accnrs, formated in database format
-  # $acc_min       - formatted AYYYY/XXXXX
-  # $acc_max       - formatted AYYYY/XXXXX
-  # $bio           - clam/fish/mammal etc table/tibble of selected accession_id
-  # $mat           - all materials that points to selected accession_id (can be multilpe per accession)
-  # $specimen      - all specimen that points to selected accession_id (one per accession)
-  # $update        - a reactive val that should be increased when this data is updated
+  # $acc                - accession table/tibble of selected
+  # $accs_db            - vector of selected accnrs, formated in database format
+  # $acc_min            - formatted AYYYY/XXXXX
+  # $acc_max            - formatted AYYYY/XXXXX
+  # $bio                - clam/fish/mammal etc table/tibble of selected accession_id
+  # $material           - all materials that points to selected accession_id (can be multilpe per accession)
+  # $material_override  - override, what the user has entered
+  # $specimen           - all specimen that points to selected accession_id (one per accession)
+  # $update             - a reactive val that should be increased when this data is updated
   selected <- dataHolder(
     acc = tibble(),
     accs_db = character(0),
     acc_min = "",
     acc_max = "",
     bio = tibble(),
-    mat = tibble(),
+    material = tibble(),
+    material_override = tibble(),
+    material_override_backup = tibble(),
     specimen = tibble(),
     update = shiny::reactiveVal(0)
   )
@@ -148,6 +151,10 @@ mod_provberedning_server <- function(id, db, account) {
       selected$bio <- tibble()
       selected$specimen <- tibble()
       selected$material <- tibble()
+
+      selected$bio_override <- tibble()
+      selected$specimen_override <- tibble()
+      selected$material_override <- tibble()
 
       selected$update(selected$update() + 1)
       logfine("mod_provberedning.R - deselect_selected_accnrs: finished")
@@ -281,6 +288,11 @@ mod_provberedning_server <- function(id, db, account) {
 
       selected$specimen <- esbaser::get_specimen_between(db$conn, selected$acc_min, selected$acc_max)
       selected$material <- esbaser::get_material_between(db$conn, selected$acc_min, selected$acc_max)
+
+      selected$bio_override <- selected$bio
+      selected$specimen_override <- selected$specimen
+      selected$material_override <- selected$material
+      selected$material_override_backup <- tibble()
 
       selected$update(selected$update() + 1)
     }

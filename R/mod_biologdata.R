@@ -215,9 +215,18 @@ mod_biologdata_server <- function(id, db, account, selected, biologdata) {
       update_static_data_from_accession_data()
     }, ignoreNULL = FALSE)
 
-    shiny::observeEvent(input$add_material, {
-      add_material()
-      handle_changed_accnrs()
+    shiny::observeEvent(input$save, {
+      logdebug("mod_biologdata.R - observeEvent(input$save, {}): called")
+      update_biologdata_overrides(db, selected, biologdata$override)
+      catalog_id <- selected$acc |> select(catalog_id) |> unlist(use.names = FALSE) |> first()
+      if (catalog_id == 2) {
+        esbaser::update_fish(db$conn, account$id, selected$bio_override)
+        esbaser::update_specimen(db$conn, account$id, selected$specimen_override)
+        shiny::showNotification("Biologdata sparat", duration = 10, type = "message")
+      } else {
+        shiny::showNotification("Can only save fish to database", duration = 10, type = "error")
+      }
+      logfine("mod_biologdata.R - observeEvent(input$save, {}): finished")
     })
   })
 }
