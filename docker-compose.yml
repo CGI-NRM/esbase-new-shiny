@@ -11,6 +11,8 @@ services:
       - "host.docker.internal:host-gateway"
     secrets:
       - db_password
+    env_file:
+      - .env
 
 secrets:
   db_password:
