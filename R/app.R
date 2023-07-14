@@ -1,6 +1,6 @@
 # Package names
 packages <- c("shiny", "shinyBS", "shinyjs", "DT", "remotes", "stringr", "dplyr", "rlang", "fastmap",
-              "rhandsontable", "htmlwidgets", "tibble", "knitr", "kableExtra", "logging")
+              "rhandsontable", "htmlwidgets", "tibble", "knitr", "kableExtra", "logging", "lubridate")
 
 # Install packages not yet installed
 installed_packages <- packages %in% rownames(installed.packages())
@@ -18,6 +18,7 @@ library(shinyBS)
 # Convenient
 library(tibble)
 library(dplyr)
+library(lubridate)
 
 # Logging
 library(logging)
