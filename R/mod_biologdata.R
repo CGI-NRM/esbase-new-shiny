@@ -61,36 +61,9 @@ mod_biologdata_ui <- function(id) {
                     )
       )
     ),
-    shinyBS::bsCollapse(
-      shinyBS::bsCollapsePanel("Lägg till material",
-                               shiny::p("Lägg till material att hantera vikter eller provbereda."),
-                               shiny::fluidRow(
-                                 shiny::column(4,
-                                               shiny::selectizeInput(
-                                                 inputId = ns("add_material_vavnad"),
-                                                 label = "Materialtyp",
-                                                 options = list(placeholder = "Materialtyp", highlight = FALSE),
-                                                 choices = c("")
-                                               )
-                                 ),
-                                 shiny::column(4,
-                                               shiny::selectizeInput(
-                                                 inputId = ns("add_material_storage"),
-                                                 label = "Förvaringsplats",
-                                                 options = list(placeholder = "Förvaringsplats", highlight = FALSE),
-                                                 choices = c("")
-                                               )
-                                 ),
-                                 shiny::column(4,
-                                               shiny::actionButton(
-                                                 inputId = ns("add_material"),
-                                                 label = "Lägg till"
-                                               )
-                                 )
-                               )
-      )
-    ),
-    rhandsontable::rHandsontableOutput(ns("details_table"))
+    rhandsontable::rHandsontableOutput(ns("details_table")),
+    shiny::br(),
+    shiny::actionButton(inputId = ns("save"), label = "Spara")
   )
 }
 
@@ -109,19 +82,6 @@ mod_biologdata_server <- function(id, db, account, selected, biologdata) {
       person_vector <- person_vector[names(person_vector) != ""]
       shiny::updateSelectizeInput(session, "provberedare", choices = person_vector,
                                   selected = NA, server = TRUE)
-
-      material_type_vector <- db$material_type |> select(id) |> unlist(use.names = FALSE)
-      names(material_type_vector) <- db$material_type |> select(swe_name) |> apply(1, paste_collapse)
-      material_type_vector <- material_type_vector[names(material_type_vector) != ""]
-      shiny::updateSelectizeInput(session, "add_material_vavnad", choices = material_type_vector,
-                                  selected = NA, server = FALSE)
-
-      material_storage <- db$material_storage |> arrange(sortbyme)
-      material_storage_vector <- db$material_storage |> select(id) |> unlist(use.names = FALSE)
-      names(material_storage_vector) <- db$material_storage |> select(name) |> apply(1, paste_collapse)
-      material_storage_vector <- material_storage_vector[names(material_storage_vector) != ""]
-      shiny::updateSelectizeInput(session, "add_material_storage", choices = material_storage_vector,
-                                  selected = NA, server = FALSE)
 
       logfine("mod_biologdata.R - update_select_inputs_with_stodlistor: finished")
     }
@@ -239,42 +199,6 @@ mod_biologdata_server <- function(id, db, account, selected, biologdata) {
       }
 
       logfine("mod_biologdata.R - handle_biologdata_table_update: finished")
-    }
-
-    add_material <- function() {
-      logdebug("mod_biologdata.R - add_material: called")
-      if (input$add_material_vavnad == "") {
-        shiny::showNotification("Du måste välja en materialtyp att lägga till.", duration = 10)
-        return()
-      }
-
-      storage_id <- ifelse(input$add_material_storage == "", 0, as.integer(input$add_material_storage))
-      type_id <- as.integer(input$add_material_vavnad)
-
-      if (added_material$mats |> filter(type_id == !!type_id, storage_id == !!storage_id) |> nrow() > 0) {
-        shiny::showNotification(
-          paste0(
-            "'",
-            db$material_type |> filter(id == type_id) |> select(swe_name) |> unlist(use.names = FALSE),
-            "' lagrat i '",
-            db$material_storage |> filter(id == storage_id) |> select(name) |> unlist(use.names = FALSE),
-            "' finns redan och kan inte läggas till igen. Detta fall måste specialhanteras."
-          ),
-          duration = 10
-        )
-        return()
-      }
-
-      added_material$mats <- rbind(
-        added_material$mats,
-        tibble(
-          type_id = type_id,
-          storage_id = storage_id
-        )
-      )
-      added_material$update(added_material$update() + 1)
-
-      logfine("mod_biologdata.R - add_material: finished")
     }
 
     # ---------- ONE-TIME SETUP ----------

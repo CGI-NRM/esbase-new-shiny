@@ -85,15 +85,6 @@ mod_provberedning_server <- function(id, db, account) {
   # $colnames   - The pretty colnames
   biologdata <- dataHolder()
 
-  # A tibble with the added materials that the biodata should show, aswell as beeing choosable when preparing provs
-  added_material <- dataHolder(
-    mats = tibble(
-      type_id = integer(0),
-      storage_id = integer(0)
-    ),
-    update = shiny::reactiveVal(0)
-  )
-
   # Containing provlista_table$dfs which is a list with prov-names as keys and the coresponding dataframe as values
   #                     and $metas which is a dataframe where the
   #                         rowsnames are prov-names, and the

@@ -307,16 +307,16 @@ mod_provlista_server <- function(id, db, account, selected, provlista_table) {
       logdebug("mod_provlista.R - update_select_inputs_with_stodlistor: called")
       # Update vävnad choices from stödlista
 
-      # Only allow choices added in added_material
-      material_vector <- seq_len(nrow(added_material$mats))
-      names(material_vector) <- (added_material$mats |>
-                                 left_join(db$material_type |> rename_w_prefix("type."), by = join_by(type_id == type.id)) |>
-                                 left_join(db$material_storage |> rename_w_prefix("storage."), by = join_by(storage_id == storage.id)) |>
-                                 select(type.swe_name, storage.name) |>
-                                 apply(1, paste_collapse)
-      )
-      shiny::updateSelectizeInput(session, prov_io(name, "vavnad"), choices = material_vector,
-                                  selected = NA, server = TRUE)
+      # Only allow choices that exists in material
+#     material_vector <- seq_len(nrow(added_material$mats))
+#     names(material_vector) <- (added_material$mats |>
+#                                left_join(db$material_type |> rename_w_prefix("type."), by = join_by(type_id == type.id)) |>
+#                                left_join(db$material_storage |> rename_w_prefix("storage."), by = join_by(storage_id == storage.id)) |>
+#                                select(type.swe_name, storage.name) |>
+#                                apply(1, paste_collapse)
+#     )
+#     shiny::updateSelectizeInput(session, prov_io(name, "vavnad"), choices = material_vector,
+#                                 selected = NA, server = TRUE)
 
       person_vector <- db$person |> select(id) |> unlist(use.names = FALSE)
       names(person_vector) <- db$person |> select(institution, firstname, lastname, town) |> apply(1, paste_collapse)
@@ -393,6 +393,8 @@ mod_provlista_server <- function(id, db, account, selected, provlista_table) {
           current_dfs[[name]][, "accnr"] <- esbaser::accdb_to_accnr(selected$accs_db)
           handle_provid_table_change(name, current_dfs[[name]])
         }
+
+        update_select_inputs_with_stodlistor(name)
       }
       logfine("mod_provlista.R - observeEvent(selected$update(), {}): finished")
     })
@@ -405,13 +407,5 @@ mod_provlista_server <- function(id, db, account, selected, provlista_table) {
       render_provid_table(prov)
       logfine("mod_provlista.R - observeEvent(input$prov_tabset_panel, {}): finished")
     })
-
-    shiny::observeEvent(added_material$update(), {
-      logdebug("mod_provlista.R - observeEvent(added_material$update(), {}): called")
-      for (name in provs()) {
-        update_select_inputs_with_stodlistor(name)
-      }
-      logfine("mod_provlista.R - observeEvent(added_material$update(), {}): finished")
-    }, ignoreInit = TRUE)
   })
 }
