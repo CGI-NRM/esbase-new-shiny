@@ -1,6 +1,9 @@
 # Esbase-new-shiny
 The shiny app of the new Esbase system
 
+# Docker-compose secret and .env
+To run the application, copy the `docker-compose.yml` file, copy `.env.example` into `.env` and `db_password.example.txt` into `db_password.txt`. Enter your details into these files.
+
 # Connect to MariaDB on host
 [Create user](https://mariadb.com/kb/en/create-user/) on the host database with username 'docker' and password 'dockerpass'.
 
@@ -22,8 +25,4 @@ docker exec -it esbase-shiny sh -c 'sudo apt update && sudo apt install iproute2
 # Shiny Modules
 
 <pre>
-app
-└── mod_provberedning
-    ├── mod_biologdata
-    └── mod_provlista
 </pre>
