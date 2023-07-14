@@ -44,6 +44,10 @@ source("mod_provberedning.R")
 source("mod_provlista.R")
 source("mod_material.R")
 
+db_pass <- readLines("/run/secrets/db_password")
+print(db_pass)
+print(Sys.getenv())
+
 # Shiny App
 ui <- shiny::fluidPage(
   shinyjs::useShinyjs(),
@@ -56,7 +60,7 @@ server <- function(input, output, session) {
   loginfo("app.R - server: server started")
 
   conn <- tryCatch(
-    esbaser::connect_to_database(),
+    esbaser::connect_to_database(host = db_ip, username = db_username, password = db_password, dbname = db_dbname),
     error = function(cond) {
       logdebug(paste0("Could not connect to database:", cond))
       shiny::showNotification(paste0("Could not connect to database: ", cond), duration = NULL, type = "error")

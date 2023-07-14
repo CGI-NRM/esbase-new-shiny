@@ -1,15 +1,18 @@
 version: '2'
 
 services:
-  esbase-shiny:
+  esbase-new-shiny:
     build: .
-    image: esbase-shiny:latest
-    container_name: esbase-shiny
+    image: ghcr.io/cgi-nrm/esbase-new-shiny:latest
+    container_name: esbase-new-shiny
     ports:
       - "3838:3838"
-        #    volumes:
-        #  - type: bind
-        # source: /home/elias/code/nrm/esbase-new-shiny/R
-        #target: /R
     extra_hosts:
       - "host.docker.internal:host-gateway"
+    secrets:
+      - db_password
+
+secrets:
+  db_password:
+    file:
+      db_password.txt
