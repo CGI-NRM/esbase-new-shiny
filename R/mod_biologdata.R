@@ -191,7 +191,7 @@ mod_biologdata_server <- function(id, db, account, selected, biologdata) {
         }
       }
 
-      changed <- any(xor(is.na(biologdata$override), is.na(new_table)) | isTRUE(biologdata$override != new_table))
+      changed <- any(xor(is.na(biologdata$override), is.na(new_table)) | unlist(lapply(biologdata$override != new_table, isTRUE)))
 
       if (changed) {
         biologdata$override <- new_table
