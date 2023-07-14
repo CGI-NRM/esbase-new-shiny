@@ -3,7 +3,6 @@ mod_provlista_ui <- function(id) {
 
   shiny::div(
     id = ns("provlista"),
-#    shiny::h3("Provlista"),
     shiny::actionButton(inputId = ns("lagg_till_prov"), label = "Lägg till prov"),
     shiny::actionButton(inputId = ns("set_limniska"), label = "Set Limniska Programmet Prover", disabled = TRUE),
     shiny::br(),
