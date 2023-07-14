@@ -6,11 +6,11 @@ mod_provberedning_ui <- function(id) {
                         shiny::fluidRow(
                           shiny::downloadButton(
                             outputId = ns("download_report"),
-                            label = "Generate Report",
+                            label = "Skapa provberedningsrapport",
                             icon = shiny::icon("download")),
                           shiny::actionButton(
                             inputId = ns("write_to_esbase"),
-                            label = "Write to ESBase",
+                            label = "Spara i Esbase",
                             icon = shiny::icon("pen"))
                         )
              ),
@@ -43,7 +43,7 @@ mod_provberedning_ui <- function(id) {
                                  mod_biologdata_ui(ns("biologdata"))
                                )
                ),
-               shiny::tabPanel(title = "Material",
+               shiny::tabPanel(title = "Material/Inventering",
                                shiny::wellPanel(
                                  mod_material_ui(ns("material"))
                                )
