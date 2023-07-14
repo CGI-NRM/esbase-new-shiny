@@ -94,7 +94,7 @@ mod_biologdata_ui <- function(id) {
   )
 }
 
-mod_biologdata_server <- function(id, db, selected, biologdata, added_material) {
+mod_biologdata_server <- function(id, db, account, selected, biologdata) {
 
   shiny::moduleServer(id, function(input, output, session) {
     loginfo("mod_biologdata.R: module server start")
@@ -199,7 +199,7 @@ mod_biologdata_server <- function(id, db, selected, biologdata, added_material) 
         biologdata$colnames <- character(0)
         biologdata$override <- tibble()
       } else {
-        ret <- create_biologdata_table(selected, db, added_material)
+        ret <- create_biologdata_table(db = db, selected = selected)
         biologdata$df <- ret$df
         biologdata$formats <- ret$formats
         biologdata$colnames <- ret$colnames

@@ -57,7 +57,7 @@ mod_provberedning_ui <- function(id) {
              )
 }
 
-mod_provberedning_server <- function(id, db) {
+mod_provberedning_server <- function(id, db, account) {
   # A new holder to move into, to replace selected_accnrs, biologdata_table
   # $acc           - accession table/tibble of selected
   # $accs_db       - vector of selected accnrs, formated in database format
@@ -330,16 +330,17 @@ mod_provberedning_server <- function(id, db) {
     # ---------- MODULE SERVERS ----------
     mod_biologdata_server("biologdata",
                           db = db,
+                          account = account,
                           selected = selected,
-                          biologdata = biologdata,
-                          added_material = added_material)
+                          biologdata = biologdata)
     mod_material_server("material",
                         db = db,
+                        account = account,
                         selected = selected)
     mod_provlista_server("provlista",
                          db = db,
+                         account = account,
                          selected = selected,
-                         provlista_table = provlista_table,
-                         added_material = added_material)
+                         provlista_table = provlista_table)
   })
 }

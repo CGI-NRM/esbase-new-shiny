@@ -96,8 +96,12 @@ server <- function(input, output, session) {
 
   logdebug(paste0("app.R - server: loading tables took ", format(load_end - load_start)))
 
+  account <- dataHolder(
+    id = 630 # currently using Sara since Im not in my dump of the database, I am 4495
+  )
+
   # ---------- MODULE SERVERS ----------
-  mod_provberedning_server("provberedning", db)
+  mod_provberedning_server("provberedning", db, account)
 }
 
 shiny::shinyApp(ui, server)
