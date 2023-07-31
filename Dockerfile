@@ -27,6 +27,7 @@ RUN Rscript -e 'print(3)' && \
     Rscript -e 'tinytex::install_tinytex()' && \
     Rscript -e 'tinytex::tlmgr_install(c("booktabs", "multirow", "wrapfig", "float", "colortbl", "pdflscape", "tabu", "threeparttable", "threeparttablex", "ulem", "makecell", "xcolor", "trimspaces", "environ", "adjustbox", "fancyhdr", "datetime2"))'
 
+# If the file exists, copy it into the container. If the timestamp in it has been updated by the builder/user, recompile cgi-nrm/esbaser
 COPY ./.esbaser_cache_break_timestam[p] /.esbaser_cache_break_timestamp
 
 RUN Rscript -e 'remotes::install_github("cgi-nrm/esbaser")'
