@@ -14,6 +14,10 @@ RUN Rscript -e 'install.packages("remotes")' && \
     Rscript -e 'remotes::install_version("rlang", upgrade="never", version="1.1.1")' && \
     Rscript -e 'remotes::install_version("fastmap", upgrade="never", version="1.1.1")'
 
+COPY ./deps_source /deps_source
+RUN apt update -y && apt install libmariadb-dev -y
+RUN Rscript -e 'install.packages("/deps_source/RMariaDB-1.2.2.tar.gz", type="source", repos=NULL)'
+
 # shiny-verse includes the tidyverse which includes tibble,
 #    Rscript -e 'remotes::install_version("tibble", upgrade="never", version="3.2.1")' && \
 #    Rscript -e 'remotes::install_version("dplyr", upgrade="never", version="1.1.2")' && \
