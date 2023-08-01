@@ -4,7 +4,7 @@ The shiny app of the new Esbase system
 # Docker-compose secret and .env
 To run the application, copy the `docker-compose.yml` file, copy `.env.example` into `.env` and `db_password.example.txt` into `db_password.txt`. Enter your details into these files.
 
-Then run `docker-compose up -d`.
+Then run `docker-compose pull` and `docker-compose up -d`.
 
 # Connect to MariaDB on host
 [Create user](https://mariadb.com/kb/en/create-user/) on the host database with username 'docker' and password 'dockerpass'.
