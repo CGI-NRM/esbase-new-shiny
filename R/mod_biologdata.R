@@ -217,6 +217,11 @@ mod_biologdata_server <- function(id, db, account, selected, biologdata) {
 
     shiny::observeEvent(input$save, {
       logdebug("mod_biologdata.R - observeEvent(input$save, {}): called")
+      if (is.null(biologdata$override) || nrow(biologdata$override) == 0) {
+        shiny::showNotification("Inga valda accessionsnummer", duration = 10, type = "message")
+        return()
+      }
+
       update_biologdata_overrides(db, selected, biologdata$override)
       catalog_id <- selected$acc |> select(catalog_id) |> unlist(use.names = FALSE) |> first()
       if (catalog_id == 2) {
