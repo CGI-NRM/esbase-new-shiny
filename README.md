@@ -48,3 +48,6 @@ I can now connect to the mysql server from within the docker-containers using th
 Python worked using MariaDB/Connector C, testing if building RMariaDB from source could resolve the issue.
 
 It worked! :)
+
+Then ran `
+mysql> CREATE USER 'shiny-esbase'@'nrm-shiny-esbase.nrm.se' IDENTIFIED BY '[[secure password]]';` and `GRANT CREATE,ALTER,DROP,INSERT,UPDATE,DELETE,SELECT,REFERENCES,RELOAD on *.* TO 'shiny-esbase'@'nrm-shiny-esbase.nrm.se';` on nogrod-clone mysql server.
