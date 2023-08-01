@@ -4,10 +4,13 @@ mod_provberedning_ui <- function(id) {
   shiny::div(id = ns("provberedning"),
              shiny::div(style = "margin: 20px",
                         shiny::fluidRow(
+                          shiny::actionButton(
+                            inputId = ns("download_action_button"),
+                            label = "Skapa provberedningsrapport",
+                            icon = shiny::icon("download")),
                           shiny::downloadButton(
                             outputId = ns("download_report"),
-                            label = "Skapa provberedningsrapport",
-                            icon = shiny::icon("download"))
+                            style = "visibility: hidden;")
                         )
              ),
              shiny::wellPanel(
@@ -20,11 +23,11 @@ mod_provberedning_ui <- function(id) {
                ),
                shiny::fluidRow(
                  shiny::column(6,
-                               shiny::textInput(inputId = ns("accnr_start"), label = "Acc.nr. start", placeholder = "[A]YYYY/XXXXX"),
+                               shiny::textInput(inputId = ns("accnr_start"), label = "AccNR från", placeholder = "[A]YYYY/XXXXX"),
                                shiny::textOutput(outputId = ns("accnr_start_message"))
                  ),
                  shiny::column(6,
-                               shiny::textInput(inputId = ns("accnr_end"), label = "Acc.nr. end", placeholder = "[A]YYYY/XXXXX"),
+                               shiny::textInput(inputId = ns("accnr_end"), label = "AccNR till", placeholder = "[A]YYYY/XXXXX"),
                                shiny::textOutput(outputId = ns("accnr_end_message"))
                  )
                ),
@@ -33,7 +36,7 @@ mod_provberedning_ui <- function(id) {
              ),
 
              shiny::tabsetPanel(
-               type = "tabs",
+               id = ns("tabs"), type = "tabs",
                shiny::tabPanel(title = "Biologdata",
                                shiny::wellPanel(
                                  mod_biologdata_ui(ns("biologdata"))
@@ -119,7 +122,8 @@ mod_provberedning_server <- function(id, db, account) {
                        selected = selected,
                        biologdata = biologdata,
                        provlistas = provlista_table$dfs,
-                       provlistas_metas = provlista_table$metas
+                       provlistas_metas = provlista_table$metas,
+                       db = db
         )
       }
 
@@ -140,6 +144,8 @@ mod_provberedning_server <- function(id, db, account) {
 
     deselect_selected_accnrs <- function() {
       logdebug("mod_provberedning.R - deselect_selected_accnrs: called")
+      prev_data <- !is.null(selected$acc) && nrow(selected$acc) > 0
+
       selected$acc <- tibble()
       selected$acc_min <- ""
       selected$acc_max <- ""
@@ -152,7 +158,9 @@ mod_provberedning_server <- function(id, db, account) {
       selected$specimen_override <- tibble()
       selected$material_override <- tibble()
 
-      selected$update(selected$update() + 1)
+      if (prev_data) {
+        selected$update(selected$update() + 1)
+      }
       logfine("mod_provberedning.R - deselect_selected_accnrs: finished")
     }
 
@@ -215,37 +223,37 @@ mod_provberedning_server <- function(id, db, account) {
           data.frame(
             missing = setdiff(series_db, accession_data |> select(id)) |> esbaser::accdb_to_accnr()
           ),
-          colnames = c("Missing from Database"))
+          colnames = c("Saknas i ESbase"))
         deselect_selected_accnrs()
         return()
       } else if (catalog_id |> nrow() != 1) {
-        output$accnr_selection_message <- shiny::renderText("The AccNRs belong to different catalogs.")
+        output$accnr_selection_message <- shiny::renderText("Accessionsnummrerna tillhör olika kataloger.")
         output$accnr_selection_dt <- render_dt_clean(
           data.frame(
             id = accession_data |> select(id) |> unlist() |> esbaser::accdb_to_accnr(),
             catalog = accession_data |> select(catalog_id) |> repr_catalog(db)
           ),
-          colnames = c("AccNR", "Catalog"))
+          colnames = c("AccNR", "Katalog"))
         deselect_selected_accnrs()
         return()
       } else if (species_id |> nrow() != 1) {
-        output$accnr_selection_message <- shiny::renderText("The AccNRs belong to different species.")
+        output$accnr_selection_message <- shiny::renderText("Accessionsnummrerna tillhör olika arter.")
         output$accnr_selection_dt <- render_dt_clean(
           data.frame(
             id = accession_data |> select(id) |> unlist() |> esbaser::accdb_to_accnr(),
             species = accession_data |> select(species_id) |> repr_species(db)
           ),
-          colnames = c("AccNR", "Species"))
+          colnames = c("AccNR", "Art"))
         deselect_selected_accnrs()
         return()
       } else if (locality_id |> nrow() != 1) {
-        output$accnr_selection_message <- shiny::renderText("The AccNRs belong to different localities.")
+        output$accnr_selection_message <- shiny::renderText("Accessionsnummrerna tillhör olika lokaler.")
         output$accnr_selection_dt <- render_dt_clean(
           data.frame(
             id = accession_data |> select(id) |> unlist() |> esbaser::accdb_to_accnr(),
             locality = accession_data |> select(locality_id) |> repr_locality(db)
           ),
-          colnames = c("AccNR", "Locality"))
+          colnames = c("AccNR", "Lokal"))
         deselect_selected_accnrs()
         return()
       } else {
@@ -299,10 +307,15 @@ mod_provberedning_server <- function(id, db, account) {
 
     # ---------- OBSERVE EVENTS ----------
     shiny::observeEvent(input$accnr_start, {
-      shiny::req(input$accnr_start)
+      if (is.null(input$accnr_start) || input$accnr_start == "") {
+        output$accnr_start_message <- shiny::renderText("")
+        deselect_selected_accnrs()
+        return()
+      }
+
       if (isFALSE(esbaser::accnr_validate(input$accnr_start))) {
         output$accnr_start_message <- shiny::renderText(
-          "Invalid AccNR in start. Please enter on the form '[ABCDGHLXP]YYYY/XXXXX' or '[ABCDGHLXP]YYYYXXXXX'")
+          "Ogiltigt accessionsnummer. Vänligen fyll i enligt formen '[ABCDGHLXP]YYYY/XXXXX' eller '[ABCDGHLXP]YYYYXXXXX'")
         deselect_selected_accnrs()
         return()
       } else {
@@ -313,10 +326,15 @@ mod_provberedning_server <- function(id, db, account) {
     })
 
     shiny::observeEvent(input$accnr_end, {
-      shiny::req(input$accnr_end)
+      if (is.null(input$accnr_end) || input$accnr_end == "") {
+        output$accnr_end_message <- shiny::renderText("")
+        deselect_selected_accnrs()
+        return()
+      }
+
       if (isFALSE(esbaser::accnr_validate(input$accnr_end))) {
         output$accnr_end_message <- shiny::renderText(
-          "Invalid AccNR in end. Please enter on the form '[ABCDGHLXP]YYYY/XXXXX' or '[ABCDGHLXP]YYYYXXXXX'")
+          "Ogiltigt accessionsnummer. Vänligen fyll i enligt formen '[ABCDGHLXP]YYYY/XXXXX' eller '[ABCDGHLXP]YYYYXXXXX'")
         deselect_selected_accnrs()
         return()
       } else {
@@ -324,6 +342,15 @@ mod_provberedning_server <- function(id, db, account) {
       }
 
       update_selected_accnrs()
+    })
+
+    shiny::observeEvent(input$download_action_button, {
+      if (length(selected$accs_db) == 0) {
+        shiny::showNotification("Inga valda accessionsnummer", duration = 10, type = "warning")
+        return()
+      }
+
+      shinyjs::runjs(paste0("document.getElementById('", session$ns("download_report"), "').click()"))
     })
 
     # ---------- MODULE SERVERS ----------

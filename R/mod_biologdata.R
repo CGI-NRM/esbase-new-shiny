@@ -110,7 +110,7 @@ mod_biologdata_server <- function(id, db, account, selected, biologdata) {
 
       if (isFALSE("acc.id" %in% colnames(biologdata$override))) {
         output$details_table <- rhandsontable::renderRHandsontable(
-          rhandsontable::rhandsontable(data.frame()) |>
+          rhandsontable::rhandsontable(data.frame(), rowHeaders = FALSE, overflow = "visible", maxRows = 0) |>
           rhandsontable::hot_context_menu(allowRowEdit = FALSE, allowColEdit = FALSE, allowComments = FALSE, allowCustomBorders = FALSE) |>
           rhot_disable_context_menu()
         )
@@ -227,6 +227,8 @@ mod_biologdata_server <- function(id, db, account, selected, biologdata) {
       if (catalog_id == 2) {
         esbaser::update_fish(db$conn, account$id, selected$bio_override)
         esbaser::update_specimen(db$conn, account$id, selected$specimen_override)
+        selected$bio <- selected$bio_override
+        selected$specimen <- selected$specimen_override
         shiny::showNotification("Biologdata sparat", duration = 10, type = "message")
       } else {
         shiny::showNotification("Can only save fish to database", duration = 10, type = "error")

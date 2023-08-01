@@ -39,7 +39,11 @@ mod_material_ui <- function(id) {
                                               multiple = FALSE)
           )
         ),
-        shiny::actionButton(inputId = ns("add_material"), label = "Lägg till material")
+        shinyBS::tipify(
+          shiny::actionButton(inputId = ns("add_material"), label = "Lägg till material"),
+          title = "Att lägga till material återställer osparande ändringar",
+          placement = "top"
+        )
       ),
       shinyBS::bsCollapsePanel(
         "Förvaringsuppgifter",
@@ -75,7 +79,15 @@ mod_material_server <- function(id, db, account, selected) {
     # ---------- FUNCTIONS ----------
     render_material_table <- function() {
       logdebug("mod_material.R - render_material_table: called")
-      shiny::req(!is.null(selected$material_override) && nrow(selected$material_override) > 0)
+      if (is.null(selected$material_override) || nrow(selected$material_override) == 0) {
+        output$material_table <- rhandsontable::renderRHandsontable(
+          rhandsontable::rhandsontable(data.frame(), rowHeaders = FALSE, overflow = "visible", maxRows = 0) |>
+          rhandsontable::hot_context_menu(allowRowEdit = FALSE, allowColEdit = FALSE, allowComments = FALSE, allowCustomBorders = FALSE) |>
+          rhot_disable_context_menu()
+        )
+        return()
+      }
+
       df <- (selected$material_override |>
              filter(material_type_id %in% input$filter_material_type | length(input$filter_material_type) == 0,
                     storage_type_id %in% input$filter_storage_type | length(input$filter_storage_type) == 0) |>
@@ -138,6 +150,10 @@ mod_material_server <- function(id, db, account, selected) {
 
     handle_material_table_changed <- function(new_table) {
       logdebug("mod_material.R - handle_material_table_changed: called")
+      if (is.null(new_table) || nrow(new_table) == 0) {
+        selected$material_override <- selected$material # Might not be needed, but safer to clear here and make sure the render in clean
+        return()
+      }
 
       new_table <- (
         new_table |>
@@ -200,6 +216,8 @@ mod_material_server <- function(id, db, account, selected) {
         accdbs <- selected$accs_db
       }
 
+      shiny::req(length(accdbs) > 0)
+
       esbaser::insert_new_material(db$conn, account$id, accdbs, input$add_material_type)
       selected$material <- esbaser::get_material_between(db$conn, selected$acc_min, selected$acc_max)
       selected$material_override <- selected$material
@@ -211,6 +229,7 @@ mod_material_server <- function(id, db, account, selected) {
 
     shiny::observeEvent(input$change_storage, {
       logdebug("mod_provlista.R - observeEvent(input$change_storage, {}): called")
+      shiny::req(!is.null(selected$material_override) && nrow(selected$material_override) > 0)
       selected$material_override_backup <- selected$material_override
 
       row_mask <- ((selected$material_override$material_type_id %in% input$filter_material_type | length(input$filter_material_type) == 0) &
@@ -230,6 +249,7 @@ mod_material_server <- function(id, db, account, selected) {
 
     shiny::observeEvent(input$change_storage_undo, {
       logdebug("mod_provlista.R - observeEvent(input$change_storage_undo, {}): called")
+      shiny::req(!is.null(selected$material_override_backup) && nrow(selected$material_override_backup) > 0)
       selected$material_override <- selected$material_override_backup
       selected$update(selected$update() + 1)
       shinyjs::disable("change_storage_undo")
@@ -238,6 +258,7 @@ mod_material_server <- function(id, db, account, selected) {
 
     shiny::observeEvent(input$save_changes, {
       logdebug("mod_provlista.R - observeEvent(input$save_changes, {}): called")
+      shiny::req(!is.null(selected$material_override) && nrow(selected$material_override) > 0)
       esbaser::update_material(db$conn, account$id, selected$material_override)
       selected$material <- selected$material_override
       selected$material_override_backup <- tibble()

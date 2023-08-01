@@ -22,7 +22,38 @@ provlist_ui <- function(prov_ns, name) {
         style = "float: right;"),
       shiny::h2(name, style = "color: #888888;"),
       shiny::fluidRow(
-        shiny::column(4,
+        shiny::column(3,
+                      shiny::selectizeInput(
+                        inputId = prov_ns("vavnad"),
+                        label = "Vävnad",
+                        choices = c(""),
+                        options = list(placeholder = "Vävnad/Material typ", highlight = FALSE)
+                      )
+        ),
+        shiny::column(3,
+                      shiny::selectizeInput(
+                        inputId = prov_ns("storage"),
+                        label = "Förvaringsplats",
+                        choices = c(""),
+                        options = list(placeholder = "Förvaringsplats", highlight = FALSE)
+                      )
+        ),
+        shiny::column(3,
+                      shiny::checkboxInput(inputId = prov_ns("homogenat"),
+                                           label = "Homogenat",
+                                           value = FALSE)
+        ),
+        shiny::column(3)
+      ),
+      shiny::hr(),
+      shiny::fluidRow(
+        shiny::column(3,
+                      shiny::selectInput(inputId = prov_ns("provtagningsinst"),
+                                         label = "Provtagnings instrument",
+                                         choices = c("", "Metallskalpell/Metallpinsett", "Keramikkniv/Plastpinsett")
+                      )
+        ),
+        shiny::column(3,
                       shiny::selectizeInput(
                         inputId = prov_ns("analystyp"),
                         label = "Analystyp",
@@ -30,46 +61,25 @@ provlist_ui <- function(prov_ns, name) {
                         choices = c("")
                       )
         ),
-        shiny::column(4,
+        shiny::column(3,
                       shiny::selectInput(inputId = prov_ns("analyslab"),
                                          label = "Analyslab",
                                          choices = c("", "ACES", "SLV", "Umeå")
                       )
         ),
-        shiny::column(4,
+        shiny::column(3,
                       shiny::selectizeInput(
                         inputId = prov_ns("analytiker"),
                         label = "Analytiker",
                         options = list(placeholder = "Analytiker", highlight = FALSE),
                         choices = c("")
                       )
-        )
+        ),
       ),
-  shiny::fluidRow(
-    shiny::column(4,
-                  shiny::selectInput(inputId = prov_ns("provtagningsinst"),
-                                     label = "Provtagnings instrument",
-                                     choices = c("", "Metallskalpell/Metallpinsett", "Keramikkniv/Plastpinsett")
-                  )
-    ),
-    shiny::column(4,
-                  shiny::selectizeInput(
-                    inputId = prov_ns("vavnad"),
-                    label = "Vävnad",
-                    choices = c(""),
-                    options = list(placeholder = "Vävnad/Material typ", highlight = FALSE)
-                  )
-    ),
-    shiny::column(4,
-                  shiny::checkboxInput(inputId = prov_ns("homogenat"),
-                                       label = "Homogenat",
-                                       value = FALSE)
-    )
-    ),
-    rhandsontable::rHandsontableOutput(prov_ns("provid_table")),
-    shiny::actionButton(inputId = prov_ns("klona_provid_fran_forsta"), label = "Kopiera ProvID från första"),
-    shiny::actionButton(inputId = prov_ns("sekvens_provid_fran_forsta"), label = "Sekvens av ProvID från första"),
-    shiny::hr()
-    )
-    )
+      rhandsontable::rHandsontableOutput(prov_ns("provid_table")),
+      shiny::br(),
+      shiny::actionButton(inputId = prov_ns("klona_provid_fran_forsta"), label = "Kopiera ProvID från första"),
+      shiny::actionButton(inputId = prov_ns("sekvens_provid_fran_forsta"), label = "Sekvens av ProvID från första")
+      )
+      )
 }
