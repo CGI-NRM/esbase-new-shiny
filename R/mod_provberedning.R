@@ -7,11 +7,7 @@ mod_provberedning_ui <- function(id) {
                           shiny::downloadButton(
                             outputId = ns("download_report"),
                             label = "Skapa provberedningsrapport",
-                            icon = shiny::icon("download")),
-                          shiny::actionButton(
-                            inputId = ns("write_to_esbase"),
-                            label = "Spara i Esbase",
-                            icon = shiny::icon("pen"))
+                            icon = shiny::icon("download"))
                         )
              ),
              shiny::wellPanel(
