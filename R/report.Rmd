@@ -91,7 +91,6 @@ ccount_analyslab <- ccount
 ccount_analytiker <- ccount
 ccount_provtagningsinst <- ccount
 ccount_vavnad <- ccount
-ccount_storage <- ccount
 
 metas <- params$provlistas_metas
 metas[metas == "" | is.na(metas)] <- " "
@@ -102,7 +101,6 @@ names(ccount_analyslab) <- c(" ", metas[, "analyslab", drop = TRUE])
 names(ccount_analytiker) <- c(" ", metas[, "analytiker", drop = TRUE])
 names(ccount_provtagningsinst) <- c(" ", metas[, "provtagningsinst", drop = TRUE])
 names(ccount_vavnad) <- c(" ", metas[, "vavnad", drop = TRUE]) |> as.character()
-names(ccount_storage) <- c(" ", metas[, "storage", drop = TRUE]) |> as.character()
 
 if (nrow(df) > 0) {
     knitr::kable(
@@ -112,7 +110,6 @@ if (nrow(df) > 0) {
     kableExtra::row_spec(row = 0, angle = 80) |>
     kableExtra::add_header_above(ccount_provtagningsinst) |>
     kableExtra::add_header_above(ccount_vavnad) |>
-    kableExtra::add_header_above(ccount_storage) |>
     kableExtra::add_header_above(ccount_analytiker) |>
     kableExtra::add_header_above(ccount_analyslab) |>
     kableExtra::add_header_above(ccount_analystyp) |>
