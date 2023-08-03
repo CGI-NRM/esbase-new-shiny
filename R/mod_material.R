@@ -224,6 +224,7 @@ mod_material_server <- function(id, db, account, selected) {
       selected$material_override_backup <- tibble()
       render_material_table()
 
+      selected$update(selected$update() + 1)
       logfine("mod_provlista.R - observeEvent(input$add_material, {}): finished")
     })
 
@@ -262,6 +263,7 @@ mod_material_server <- function(id, db, account, selected) {
       esbaser::update_material(db$conn, account$id, selected$material_override)
       selected$material <- selected$material_override
       selected$material_override_backup <- tibble()
+      selected$update(selected$update() + 1)
       shiny::showNotification("Materialdata sparat", duration = 10, type = "message")
       logfine("mod_provlista.R - observeEvent(input$save_changes, {}): finished")
     })
