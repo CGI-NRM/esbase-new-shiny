@@ -15,7 +15,7 @@ mod_provlista_ui <- function(id) {
   )
 }
 
-mod_provlista_server <- function(id, db, account, selected, provlista_table) {
+mod_provlista_server <- function(id, db, account, selected, provlista, provberednings_protokoll) {
   shiny::moduleServer(id, function(input, output, session) {
     loginfo("mod_provlista.R: module server start")
     # ---------- REACTIVE VARIABLES ----------
@@ -452,6 +452,20 @@ mod_provlista_server <- function(id, db, account, selected, provlista_table) {
       )[, "prov"]
       render_provid_table(prov)
       logfine("mod_provlista.R - observeEvent(input$prov_tabset_panel, {}): finished")
+    })
+
+    shiny::observeEvent(input$save, {
+      logdebug("mod_provlista.R - observeEvent(input$save, {}): called")
+      for (prov in provs()) {
+        save_provlista(
+          db = db,
+          account = account,
+          selected = selected,
+          provlista = provlista,
+          provberednings_protokoll = provberednings_protokoll,
+          prov_name = prov)
+      }
+      logfine("mod_provlista.R - observeEvent(input$save, {}): finished")
     })
   })
 }

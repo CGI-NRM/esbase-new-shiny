@@ -93,12 +93,11 @@ mod_provberedning_server <- function(id, db, account) {
   #                         columns are 'homogenat analyslab analystyp analytiker provtagningsinst vavnads'
   provlista_table <- dataHolder()
 
-  # Containing $material_type_vector
-  #            $species_vector
-  #            $lokaler_vector
-  #            $projects_vector
-  #            which all are named vectors with ids and representations for the respective help-table
-  # session$userData$stodlistor
+  # A holder for metadata for provberedning
+  # $project
+  # $beredningsdatum
+  # $provberedare
+  provberednings_protokoll <- dataHolder()
 
   shiny::moduleServer(id, function(input, output, session) {
     loginfo("mod_provberedning_server.R: module server start")
@@ -342,15 +341,24 @@ mod_provberedning_server <- function(id, db, account) {
       }
 
       update_selected_accnrs()
+      logfine("mod_provberedning.R - observeEvent(input$accnr_end, {}): finished")
     })
 
     shiny::observeEvent(input$download_action_button, {
+      logdebug("mod_provberedning.R - observeEvent(input$download_action_button, {}): called")
       if (length(selected$accs_db) == 0) {
         shiny::showNotification("Inga valda accessionsnummer", duration = 10, type = "warning")
         return()
       }
 
       shinyjs::runjs(paste0("document.getElementById('", session$ns("download_report"), "').click()"))
+      logfine("mod_provberedning.R - observeEvent(input$download_action_button, {}): finished")
+    })
+
+    shiny::observeEvent(input$project, {
+      logdebug("mod_provberedning.R - observeEvent(input$project, {}): called")
+      provberednings_protokoll$project <- ifelse(input$project == "", NA, input$project)
+      logfine("mod_provberedning.R - observeEvent(input$project, {}): finished")
     })
 
     # ---------- MODULE SERVERS ----------
@@ -358,7 +366,8 @@ mod_provberedning_server <- function(id, db, account) {
                           db = db,
                           account = account,
                           selected = selected,
-                          biologdata = biologdata)
+                          biologdata = biologdata,
+                          provberednings_protokoll = provberednings_protokoll)
     mod_material_server("material",
                         db = db,
                         account = account,
@@ -367,6 +376,7 @@ mod_provberedning_server <- function(id, db, account) {
                          db = db,
                          account = account,
                          selected = selected,
-                         provlista_table = provlista_table)
+                         provlista = provlista,
+                         provberednings_protokoll = provberednings_protokoll)
   })
 }

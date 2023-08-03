@@ -67,7 +67,7 @@ mod_biologdata_ui <- function(id) {
   )
 }
 
-mod_biologdata_server <- function(id, db, account, selected, biologdata) {
+mod_biologdata_server <- function(id, db, account, selected, biologdata, provberednings_protokoll) {
 
   shiny::moduleServer(id, function(input, output, session) {
     loginfo("mod_biologdata.R: module server start")
@@ -234,6 +234,18 @@ mod_biologdata_server <- function(id, db, account, selected, biologdata) {
         shiny::showNotification("Can only save fish to database", duration = 10, type = "error")
       }
       logfine("mod_biologdata.R - observeEvent(input$save, {}): finished")
+    })
+
+    shiny::observeEvent(input$beredningsdatum, {
+      logdebug("mod_biologdata.R - observeEvent(input$beredningsdatum, {}): called")
+      provberednings_protokoll$beredningsdatum <- input$beredningsdatum
+      logfine("mod_biologdata.R - observeEvent(input$beredningsdatum, {}): finished")
+    })
+
+    shiny::observeEvent(input$provberedare, {
+      logdebug("mod_biologdata.R - observeEvent(input$provberedare, {}): called")
+      provberednings_protokoll$provberedare <- input$provberedare
+      logfine("mod_biologdata.R - observeEvent(input$provberedare, {}): finished")
     })
   })
 }
