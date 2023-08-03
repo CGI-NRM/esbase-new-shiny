@@ -18,6 +18,7 @@ library(shinyBS)
 # Convenient
 library(tibble)
 library(dplyr)
+library(tidyr)
 library(lubridate)
 
 # Logging
