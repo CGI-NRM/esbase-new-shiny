@@ -11,7 +11,8 @@ mod_provlista_ui <- function(id) {
       type = "tabs",
       id = ns("prov_tabset_panel"),
       provlist_ui(create_prov_ns("prov1", ns), "prov1")
-    )
+    ),
+    shiny::actionButton(inputId = ns("save"), label = "Spara provberedningar")
   )
 }
 
