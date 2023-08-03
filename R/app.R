@@ -37,6 +37,7 @@ source("utils.R")
 
 source("provlist_ui.R")
 source("report.R")
+source("utils_report.R")
 
 # Sourcing modules
 source("mod_biologdata.R")
