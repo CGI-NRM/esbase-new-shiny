@@ -42,6 +42,7 @@ source("mod_biologdata.R")
 source("utils_biologdata.R")
 source("mod_provberedning.R")
 source("mod_provlista.R")
+source("utils_provlista.R")
 source("mod_material.R")
 
 db_password <- readLines("/run/secrets/db_password")
