@@ -88,11 +88,11 @@ mod_provberedning_server <- function(id, db, account) {
   # $colnames   - The pretty colnames
   biologdata <- dataHolder()
 
-  # Containing provlista_table$dfs which is a list with prov-names as keys and the coresponding dataframe as values
-  #                     and $metas which is a dataframe where the
-  #                         rowsnames are prov-names, and the
-  #                         columns are 'homogenat analyslab analystyp analytiker provtagningsinst vavnads'
-  provlista_table <- dataHolder()
+  # Containing provlista$dfs which is a list with prov-names as keys and the coresponding dataframe as values
+  #                       and $metas which is a dataframe where the
+  #                           rowsnames are prov-names, and the
+  #                           columns are 'homogenat analyslab analystyp analytiker provtagningsinst vavnads'
+  provlista <- dataHolder()
 
   # A holder for metadata for provberedning
   # $project
@@ -121,8 +121,8 @@ mod_provberedning_server <- function(id, db, account) {
         report_content(file = file,
                        selected = selected,
                        biologdata = biologdata,
-                       provlistas = provlista_table$dfs,
-                       provlistas_metas = provlista_table$metas,
+                       provlistas = provlista$dfs,
+                       provlistas_metas = provlista$metas,
                        db = db
         )
       }

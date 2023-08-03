@@ -25,15 +25,14 @@ mod_provlista_server <- function(id, db, account, selected, provlista, provbered
     provs_observe_events <- dataHolder()
 
     # ---------- DEFAULT VALUES ----------
-    provlista_table$dfs <- list()
-    provlista_table$metas <- data.frame(
+    provlista$dfs <- list()
+    provlista$metas <- data.frame(
       homogenat = logical(0),
       analyslab = character(0),
       analystyp = character(0),
       analytiker = character(0),
       provtagningsinst = character(0),
-      vavnad = character(0),
-      storage = character(0)
+      vavnad = character(0)
     )
     provs(c("prov1"))
 
@@ -43,60 +42,75 @@ mod_provlista_server <- function(id, db, account, selected, provlista, provbered
       paste0(name, "_", id)
     }
 
-    provid_table_cols <- c("check", "accnr", "provid", "aces", "delvikt", "provvikt")
-    provid_table_cols_pretty <- c("", "Acc.nr.", "ProvID", "ACES NR", "Delvikt (g)", "Provvikt (g)")
+    provid_table_cols <- c("check", "accnr", "material.amount_original", "material.amount_left",
+                           "material_storage.name", "provid", "aces", "delvikt", "provvikt")
+    provid_table_cols_pretty <- c("", "Acc.nr.", "Sparad (g)", "Mängd kvar (g, st)",
+                                  "Förvaringsplats", "ProvID", "ACES NR", "Delvikt (g)", "Provvikt (g)")
+    provid_table_readonly_cols <- c("accnr", "material.amount_original", "material.amount_left", "material_storage.name")
+    provid_table_number_columns <- c("delvikt", "provvikt")
+
+    assign_material_id <- function(name) {
+      logdebug("mod_provlista.R - assign_material_id: called")
+      if (is.null(input[[prov_io(name, "vavnad")]]) || is.null(provlista$dfs[[name]]) || nrow(selected$material) == 0) {
+        return()
+      }
+
+      mat_vavnad <- selected$material |> filter(material_type_id == input[[prov_io(name, "vavnad")]])
+      for (row in seq_len(nrow(provlista$dfs[[name]]))) {
+        if (
+          !is.na(provlista$dfs[[name]][row, "material_id"]) &&
+          (provlista$dfs[[name]][row, "material_id"] %in% mat_vavnad$id)
+        ) {
+          next
+        }
+        accdb <- esbaser::accnr_to_accdb(provlista$dfs[[name]][row, "accnr"])
+        mat <- mat_vavnad |> filter(accession_id == accdb)
+
+        if (nrow(mat) == 0) {
+          provlista$dfs[[name]][row, "material_id"] <- NA
+        } else if (nrow(mat) == 1) {
+          provlista$dfs[[name]][row, "material_id"] <- mat |> select(id) |> unlist(use.names = FALSE)
+        } else if (nrow(mat) > 1) {
+          provlista$dfs[[name]][row, "material_id"] <- mat |> select(id) |> first() |> unlist(use.names = FALSE)
+        }
+      }
+
+      logfine("mod_provlista.R - assign_material_id: finished")
+    }
 
     # Create a new provid_table dataframe with default/empty values and place in provid_table
     create_provid_table <- function(name) {
       logdebug("mod_provlista.R - create_provid_table: called")
-      if (is.null(input[[prov_io(name, "vavnad")]]) || input[[prov_io(name, "vavnad")]] == "" ||
-          is.null(input[[prov_io(name, "storage")]]) || input[[prov_io(name, "storage")]] == "" ||
-          is.null(input[[prov_io(name, "homogenat")]])) {
-        provlista_table$dfs[[name]] <- tibble(
-          accnr = character(0),
-          provid = character(0),
-          check = character(0),
-          delvikt = numeric(0),
-          provvikt = numeric(0),
-          aces = character(0)
-        )
-      } else {
-        provlista_table$dfs[[name]] <- (selected$material |>
-                                        filter(
-                                          material_type_id == input[[prov_io(name, "vavnad")]] &
-                                          storage_type_id == input[[prov_io(name, "storage")]]))
 
-        num <- nrow(provlista_table$dfs[[name]])
-        provlista_table$dfs[[name]] <- add_column(provlista_table$dfs[[name]],
-                                                  accnr = esbaser::accdb_to_accnr(provlista_table$dfs[[name]]$accession_id),
-                                                  check = rep(TRUE, num),
-                                                  provid = rep("", num),
-                                                  aces = rep("", num),
-                                                  delvikt = as.numeric(NA) |> rep(num),
-                                                  provvikt = as.numeric(NA) |> rep(num)
-        )
-      }
+      num <- length(selected$accs_db)
+      provlista$dfs[[name]] <- tibble(
+        accnr = esbaser::accdb_to_accnr(selected$accs_db),
+        check = rep(TRUE, num),
+        provid = rep("", num),
+        aces = rep("", num),
+        delvikt = as.numeric(NA) |> rep(num),
+        provvikt = as.numeric(NA) |> rep(num),
+        material_id = rep(NA, num)
+      )
 
-      provlista_table$metas[name, "vavnad"] <- ifelse(is.null(input[[prov_io(name, "vavnad")]]),
+      provlista$metas[name, "vavnad"] <- ifelse(is.null(input[[prov_io(name, "vavnad")]]),
                                                       "", input[[prov_io(name, "vavnad")]])
-      provlista_table$metas[name, "storage"] <- ifelse(is.null(input[[prov_io(name, "storage")]]),
-                                                      "", input[[prov_io(name, "storage")]])
-      provlista_table$metas[name, "provtagningsinst"] <- ifelse(is.null(input[[prov_io(name, "provtagningsinst")]]),
+      provlista$metas[name, "provtagningsinst"] <- ifelse(is.null(input[[prov_io(name, "provtagningsinst")]]),
                                                                 "", input[[prov_io(name, "provtagningsinst")]])
-      provlista_table$metas[name, "analytiker"] <- ifelse(is.null(input[[prov_io(name, "analytiker")]]),
+      provlista$metas[name, "analytiker"] <- ifelse(is.null(input[[prov_io(name, "analytiker")]]),
                                                           "", input[[prov_io(name, "analytiker")]])
-      provlista_table$metas[name, "analystyp"] <- ifelse(is.null(input[[prov_io(name, "analystyp")]]),
+      provlista$metas[name, "analystyp"] <- ifelse(is.null(input[[prov_io(name, "analystyp")]]),
                                                          "", input[[prov_io(name, "analystyp")]])
-      provlista_table$metas[name, "analyslab"] <- ifelse(is.null(input[[prov_io(name, "analyslab")]]),
+      provlista$metas[name, "analyslab"] <- ifelse(is.null(input[[prov_io(name, "analyslab")]]),
                                                          "", input[[prov_io(name, "analyslab")]])
-      provlista_table$metas[name, "homogenat"] <- ifelse(is.null(input[[prov_io(name, "homogenat")]]),
+      provlista$metas[name, "homogenat"] <- ifelse(is.null(input[[prov_io(name, "homogenat")]]),
                                                          FALSE, input[[prov_io(name, "homogenat")]])
       logfine("mod_provlista.R - create_provid_table: finished")
     }
 
     handle_provid_table_change <- function(name, new_table) {
       logdebug("mod_provlista.R - handle_provid_table_change: called")
-      if (is.null(provlista_table$dfs[[name]]) || nrow(new_table) != nrow(provlista_table$dfs[[name]])) {
+      if (is.null(provlista$dfs[[name]]) || nrow(new_table) != nrow(provlista$dfs[[name]])) {
         shiny::showNotification(
           paste0(
             "Kan inte lägga till eller ta bort rader i tabellen."
@@ -107,12 +121,12 @@ mod_provlista_server <- function(id, db, account, selected, provlista, provbered
       changed <- FALSE
 
       cn <- colnames(new_table)
-      for (col in cn[cn != "accnr"]) {
-        cells_changed <- provlista_table$dfs[[name]][col] != new_table[col]
-        cells_changed <- cells_changed | xor(is.na(provlista_table$dfs[[name]][col]), is.na(new_table[col]))
+      for (col in cn[!(cn %in% provid_table_readonly_cols)]) {
+        cells_changed <- provlista$dfs[[name]][col] != new_table[col]
+        cells_changed <- cells_changed | xor(is.na(provlista$dfs[[name]][col]), is.na(new_table[col]))
 
         rows <- which(cells_changed)
-        provlista_table$dfs[[name]][rows, col] <- new_table[rows, col]
+        provlista$dfs[[name]][rows, col] <- new_table[rows, col]
 
         if (length(rows) > 0) {
           changed <- TRUE
@@ -139,7 +153,7 @@ mod_provlista_server <- function(id, db, account, selected, provlista, provbered
         return()
       }
 
-      if (is.null(provlista_table$dfs[[name]]) || nrow(provlista_table$dfs[[name]]) == 0) {
+      if (is.null(provlista$dfs[[name]]) || nrow(provlista$dfs[[name]]) == 0) {
         output[[prov_io(name, "provid_table")]] <- rhandsontable::renderRHandsontable({
           rhandsontable::rhandsontable(data.frame(), rowHeaders = FALSE, overflow = "visible", maxRows = 0) |>
           rhandsontable::hot_context_menu(allowRowEdit = FALSE, allowColEdit = FALSE, allowComments = FALSE, allowCustomBorders = FALSE) |>
@@ -186,15 +200,15 @@ mod_provlista_server <- function(id, db, account, selected, provlista, provbered
 
     klona_provid_fran_forsta <- function(name) {
       logdebug("mod_provlista.R - klona_provid_fran_forsta: called")
-      if (!esbaser::provid_validate(provlista_table$dfs[[name]][1, "provid"])) {
+      if (!esbaser::provid_validate(provlista$dfs[[name]][1, "provid"])) {
         shiny::showNotification(
           "Ogiltigt eller saknat ProvID i första rader. Vänligen skriv i enligt 'Q2022-12345.'",
           type = "warning")
         return()
       }
 
-      new_table <- provlista_table$dfs[[name]]
-      new_table[selected$accs_db != "", "provid"] <- provlista_table$dfs[[name]][1, "provid"]
+      new_table <- provlista$dfs[[name]]
+      new_table[selected$accs_db != "", "provid"] <- provlista$dfs[[name]][1, "provid"]
       new_table[!new_table$check, "provid"] <- ""
       handle_provid_table_change(name, new_table)
       logfine("mod_provlista.R - klona_provid_fran_forsta: finished")
@@ -202,15 +216,15 @@ mod_provlista_server <- function(id, db, account, selected, provlista, provbered
 
     sekvens_provid_fran_forsta <- function(name) {
       logdebug("mod_provlista.R - sekvens_provid_fran_forsta: called")
-      if (!esbaser::provid_validate(provlista_table$dfs[[name]][1, "provid"])) {
+      if (!esbaser::provid_validate(provlista$dfs[[name]][1, "provid"])) {
         shiny::showNotification(
           "Ogiltigt eller saknat ProvID i första rader. Vänligen skriv i enligt 'Q2022-12345.'",
           type = "warning")
         return()
       }
 
-      parsed <- esbaser::provid_parse(provlista_table$dfs[[name]][1, "provid"])
-      new_table <- provlista_table$dfs[[name]]
+      parsed <- esbaser::provid_parse(provlista$dfs[[name]][1, "provid"])
+      new_table <- provlista$dfs[[name]]
       new_table[selected$accs_db != "", "provid"] <- unlist(
         lapply(
           seq_len(nrow(new_table))[selected$accs_db != ""],
@@ -259,82 +273,71 @@ mod_provlista_server <- function(id, db, account, selected, provlista, provbered
       # This handles the first render aswell when the UI has been renderer, and the input$ has been initialized
       # Except for the initial prov1, where the input already exists and the observeEvent for selected$update()
       #     creates and does the initial render
-      o1 <- shiny::observeEvent({
-        input[[prov_io(name, "analyslab")]]
-        input[[prov_io(name, "homogenat")]]
-        1
-      }, {
-        render_provid_table(name)
-      }, ignoreInit = TRUE)
+      observers <- c(
+        shiny::observeEvent({
+          input[[prov_io(name, "analyslab")]]
+          input[[prov_io(name, "homogenat")]]
+          1
+        }, {
+          render_provid_table(name)
+        }, ignoreInit = TRUE),
 
-      o2 <- shiny::observeEvent({
-        input[[prov_io(name, "vavnad")]]
-        input[[prov_io(name, "storage")]]
-        input[[prov_io(name, "homogenat")]]
-        1
-      }, {
-        create_provid_table(name)
-        render_provid_table(name)
-      }, ignoreNULL = TRUE, ignoreInit = TRUE)
+        shiny::observeEvent(input[[prov_io(name, "klona_provid_fran_forsta")]], {
+          klona_provid_fran_forsta(name)
+        }),
 
-      o3 <- shiny::observeEvent(input[[prov_io(name, "klona_provid_fran_forsta")]], {
-        klona_provid_fran_forsta(name)
-      })
+        shiny::observeEvent(input[[prov_io(name, "sekvens_provid_fran_forsta")]], {
+          sekvens_provid_fran_forsta(name)
+        }),
 
-      o4 <- shiny::observeEvent(input[[prov_io(name, "sekvens_provid_fran_forsta")]], {
-        sekvens_provid_fran_forsta(name)
-      })
+        shiny::observeEvent(input[[prov_io(name, "provid_table")]], {
+          new_table <- rhandsontable::hot_to_r(input[[prov_io(name, "provid_table")]])
+          handle_provid_table_change(name, new_table)
+        }),
 
-      o5 <- shiny::observeEvent(input[[prov_io(name, "provid_table")]], {
-        new_table <- rhandsontable::hot_to_r(input[[prov_io(name, "provid_table")]])
-        handle_provid_table_change(name, new_table)
-      })
+        shiny::observeEvent(input[[prov_io(name, "homogenat")]], {
+          provlista$metas[name, "homogenat"] <- ifelse(is.null(input[[prov_io(name, "homogenat")]]),
+                                                             "", input[[prov_io(name, "homogenat")]])
+          if (!is.null(provlista$dfs[[name]])) {
+            num <- nrow(provlista$dfs[[name]])
+            provlista$dfs[[name]]$check <- rep(TRUE, num)
+          }
+        }),
 
-      o6 <- shiny::observeEvent(input[[prov_io(name, "homogenat")]], {
-        provlista_table$metas[name, "homogenat"] <- ifelse(is.null(input[[prov_io(name, "homogenat")]]),
-                                                            "", input[[prov_io(name, "homogenat")]])
-        if (!is.null(provlista_table$dfs[[name]])) {
-          num <- nrow(provlista_table$dfs[[name]])
-          provlista_table$dfs[[name]]$check <- rep(TRUE, num)
-        }
-      })
+        shiny::observeEvent(input[[prov_io(name, "analyslab")]], {
+          provlista$metas[name, "analyslab"] <- ifelse(is.null(input[[prov_io(name, "analyslab")]]),
+                                                             "", input[[prov_io(name, "analyslab")]])
+        }),
 
-      o7 <- shiny::observeEvent(input[[prov_io(name, "analyslab")]], {
-        provlista_table$metas[name, "analyslab"] <- ifelse(is.null(input[[prov_io(name, "analyslab")]]),
-                                                            "", input[[prov_io(name, "analyslab")]])
-      })
+        shiny::observeEvent(input[[prov_io(name, "analystyp")]], {
+          provlista$metas[name, "analystyp"] <- ifelse(is.null(input[[prov_io(name, "analystyp")]]),
+                                                             "", input[[prov_io(name, "analystyp")]])
+        }),
 
-      o8 <- shiny::observeEvent(input[[prov_io(name, "analystyp")]], {
-        provlista_table$metas[name, "analystyp"] <- ifelse(is.null(input[[prov_io(name, "analystyp")]]),
-                                                            "", input[[prov_io(name, "analystyp")]])
-      })
+        shiny::observeEvent(input[[prov_io(name, "analytiker")]], {
+          provlista$metas[name, "analytiker"] <- ifelse(is.null(input[[prov_io(name, "analytiker")]]),
+                                                              "", input[[prov_io(name, "analytiker")]])
+        }),
 
-      o9 <- shiny::observeEvent(input[[prov_io(name, "analytiker")]], {
-        provlista_table$metas[name, "analytiker"] <- ifelse(is.null(input[[prov_io(name, "analytiker")]]),
-                                                            "", input[[prov_io(name, "analytiker")]])
-      })
+        shiny::observeEvent(input[[prov_io(name, "provtagningsinst")]], {
+          provlista$metas[name, "provtagningsinst"] <- ifelse(is.null(input[[prov_io(name, "provtagningsinst")]]),
+                                                                    "", input[[prov_io(name, "provtagningsinst")]])
+        }),
 
-      o10 <- shiny::observeEvent(input[[prov_io(name, "provtagningsinst")]], {
-        provlista_table$metas[name, "provtagningsinst"] <- ifelse(is.null(input[[prov_io(name, "provtagningsinst")]]),
-                                                                  "", input[[prov_io(name, "provtagningsinst")]])
-      })
+        shiny::observeEvent(input[[prov_io(name, "vavnad")]], {
+          provlista$metas[name, "vavnad"] <- ifelse(is.null(input[[prov_io(name, "vavnad")]]),
+                                                          "", input[[prov_io(name, "vavnad")]])
+          assign_material_id(name)
+          render_provid_table(name)
+        }),
 
-      o11 <- shiny::observeEvent(input[[prov_io(name, "vavnad")]], {
-        provlista_table$metas[name, "vavnad"] <- ifelse(is.null(input[[prov_io(name, "vavnad")]]),
-                                                         "", input[[prov_io(name, "vavnad")]])
-      })
-
-      o12 <- shiny::observeEvent(input[[prov_io(name, "storage")]], {
-        provlista_table$metas[name, "storage"] <- ifelse(is.null(input[[prov_io(name, "storage")]]),
-                                                         "", input[[prov_io(name, "storage")]])
-      })
-
-      o13 <- shiny::observeEvent(input[[prov_io(name, "delete_section")]], {
-        delete_prov_section(name)
-      }, ignoreInit = TRUE)
+        shiny::observeEvent(input[[prov_io(name, "delete_section")]], {
+          delete_prov_section(name)
+        }, ignoreInit = TRUE)
+      )
 
       # Save observe events so that they can be deleted later
-      provs_observe_events[[name]] <- c(o1, o2, o3, o4, o5, o6, o7, o8, o9, o10, o11, o12, o13)
+      provs_observe_events[[name]] <- observers
     }
 
     update_select_inputs_with_stodlistor <- function(name) {
@@ -348,19 +351,9 @@ mod_provlista_server <- function(id, db, account, selected, provlista, provbered
         material_vector <- materials |> select(material_type_id) |> unlist(use.names = FALSE)
         names(material_vector) <- materials |> select(type.swe_name) |> unlist(use.names = FALSE)
         shiny::updateSelectizeInput(session, prov_io(name, "vavnad"), choices = material_vector,
-                                    selected = NA, server = TRUE)
-
-        storages <- (selected$material |> select(storage_type_id) |> unique() |>
-                     left_join(db$material_storage |> rename_w_prefix("type."), by = join_by(storage_type_id == type.id)) |>
-                     arrange(type.sortbyme) |> filter(!is.na(storage_type_id) & type.name != ""))
-        storage_vector <- storages |> select(storage_type_id) |> unlist(use.names = FALSE)
-        names(storage_vector) <- storages |> select(type.name) |> unlist(use.names = FALSE)
-        shiny::updateSelectizeInput(session, prov_io(name, "storage"), choices = storage_vector,
-                                    selected = NA, server = TRUE)
+                                    selected = input[[prov_io(name, "vavnad")]], server = TRUE)
       } else {
         shiny::updateSelectizeInput(session, prov_io(name, "vavnad"), choices = c(""),
-                                    selected = NA, server = TRUE)
-        shiny::updateSelectizeInput(session, prov_io(name, "storage"), choices = c(""),
                                     selected = NA, server = TRUE)
       }
 
@@ -368,13 +361,13 @@ mod_provlista_server <- function(id, db, account, selected, provlista, provbered
       names(person_vector) <- db$person |> select(institution, firstname, lastname, town) |> apply(1, paste_collapse)
       person_vector <- person_vector[names(person_vector) != ""]
       shiny::updateSelectizeInput(session, prov_io(name, "analytiker"), choices = person_vector,
-                                  selected = NA, server = TRUE)
+                                  selected = input[[prov_io(name, "analytiker")]], server = TRUE)
 
       analysis_type_vector <- db$analysis_type |> select(id) |> unlist(use.names = FALSE)
       names(analysis_type_vector) <- db$analysis_type |> select(name) |> apply(1, paste_collapse)
       analysis_type_vector <- analysis_type_vector[names(analysis_type_vector) != ""]
       shiny::updateSelectizeInput(session, prov_io(name, "analystyp"), choices = analysis_type_vector,
-                                  selected = NA, server = TRUE)
+                                  selected = input[[prov_io(name, "analystyp")]], server = TRUE)
 
       logfine("mod_provlista.R - update_select_inputs_with_stodlistor: finished")
     }
@@ -388,8 +381,8 @@ mod_provlista_server <- function(id, db, account, selected, provlista, provbered
       }
 
       provs(provs()[provs() != name])
-      provlista_table$metas <- provlista_table$metas[rownames(provlista_table$metas) != name, ]
-      provlista_table$dfs[[name]] <- NULL
+      provlista$metas <- provlista$metas[rownames(provlista$metas) != name, ]
+      provlista$dfs[[name]] <- NULL
 
       shiny::removeTab(inputId = "prov_tabset_panel", target = session$ns(prov_io(name, "tabpanel")))
 
@@ -430,16 +423,22 @@ mod_provlista_server <- function(id, db, account, selected, provlista, provbered
       logdebug("mod_provlista.R - observeEvent(selected$update(), {}): called")
       # TODO: If accnr changed, remove row
       # TODO: If length(selected$accs_db) change, do not clear all data, only add the necessary new rows
-      current_dfs <- provlista_table$dfs
+      current_dfs <- provlista$dfs
       for (name in provs()) {
-        if (is.null(current_dfs[[name]]) || nrow(current_dfs[[name]]) != length(selected$accs_db)) {
+        if (
+          is.null(current_dfs[[name]]) ||
+          nrow(current_dfs[[name]]) != length(selected$accs_db) ||
+          any(current_dfs[[name]]$accnr != esbaser::accdb_to_accnr(selected$accs_db), na.rm = TRUE)
+        ) {
           create_provid_table(name)
+          assign_material_id(name)
           render_provid_table(name)
         } else {
           current_dfs[[name]][, "accnr"] <- esbaser::accdb_to_accnr(selected$accs_db)
           handle_provid_table_change(name, current_dfs[[name]])
         }
 
+        assign_material_id(name)
         update_select_inputs_with_stodlistor(name)
       }
       logfine("mod_provlista.R - observeEvent(selected$update(), {}): finished")
