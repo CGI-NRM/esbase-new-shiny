@@ -15,10 +15,11 @@ mod_provberedning_ui <- function(id) {
              ),
              shiny::wellPanel(
                shiny::selectizeInput(
-                 inputId = ns("projekt"),
+                 inputId = ns("project"),
                  label = "Projekt /Program",
                  choices = c(""),
                  options = list(placeholder = "Projekt", highlight = FALSE),
+                 selected = NA,
                  width = "100%"
                ),
                shiny::fluidRow(
@@ -109,7 +110,7 @@ mod_provberedning_server <- function(id, db, account) {
       projects_vector <- db$project |> select(id) |> unlist(use.names = FALSE)
       names(projects_vector) <- db$project |> select(number, name) |> apply(1, paste_collapse)
       names(projects_vector)[names(projects_vector) == ""] <- "-"
-      shiny::updateSelectizeInput(session, "projekt", choices = projects_vector,
+      shiny::updateSelectizeInput(session, "project", choices = projects_vector,
                                   selected = NA, server = TRUE)
       logfine("mod_provberedning.R - update_select_inputs_with_stodlistor: finished")
     }
