@@ -27,15 +27,8 @@ provlist_ui <- function(prov_ns, name) {
                         inputId = prov_ns("vavnad"),
                         label = "Vävnad",
                         choices = c(""),
+                        selected = NA,
                         options = list(placeholder = "Vävnad/Material typ", highlight = FALSE)
-                      )
-        ),
-        shiny::column(3,
-                      shiny::selectizeInput(
-                        inputId = prov_ns("storage"),
-                        label = "Förvaringsplats",
-                        choices = c(""),
-                        options = list(placeholder = "Förvaringsplats", highlight = FALSE)
                       )
         ),
         shiny::column(3,
@@ -43,7 +36,7 @@ provlist_ui <- function(prov_ns, name) {
                                            label = "Homogenat",
                                            value = FALSE)
         ),
-        shiny::column(3)
+        shiny::column(6)
       ),
       shiny::hr(),
       shiny::fluidRow(
@@ -58,7 +51,8 @@ provlist_ui <- function(prov_ns, name) {
                         inputId = prov_ns("analystyp"),
                         label = "Analystyp",
                         options = list(placeholder = "Analystyp", highlight = FALSE),
-                        choices = c("")
+                        choices = c(""),
+                        selected = NA
                       )
         ),
         shiny::column(3,
@@ -72,7 +66,8 @@ provlist_ui <- function(prov_ns, name) {
                         inputId = prov_ns("analytiker"),
                         label = "Analytiker",
                         options = list(placeholder = "Analytiker", highlight = FALSE),
-                        choices = c("")
+                        choices = c(""),
+                        selected = NA
                       )
         ),
       ),

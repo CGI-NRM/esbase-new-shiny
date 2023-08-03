@@ -163,7 +163,7 @@ mod_provlista_server <- function(id, db, account, selected, provlista, provbered
         return()
       }
 
-      cols <- c("accnr", "provid")
+      cols <- c("accnr", "material.amount_original", "material.amount_left", "material_storage.name", "provid")
       if (input[[prov_io(name, "analyslab")]] == "ACES") {
         cols <- c(cols, "aces")
       }
@@ -172,24 +172,28 @@ mod_provlista_server <- function(id, db, account, selected, provlista, provbered
       }
       cols <- c(cols, "provvikt")
 
-      df <- provlista_table$dfs[[name]][cols]
+      df_all <- (
+        provlista$dfs[[name]] |>
+        left_join(selected$material |> rename_w_prefix("material."), by = join_by(material_id == material.id)) |>
+        left_join(db$material_storage |> rename_w_prefix("material_storage."),
+                  by = join_by(material.storage_type_id == material_storage.id)))
+      df <- df_all |> select(all_of(cols))
 
       output[[prov_io(name, "provid_table")]] <- rhandsontable::renderRHandsontable({
         hot <- (
           rhandsontable::rhandsontable(df, rowHeaders = FALSE, overflow = "visible", maxRows = nrow(df)) |>
           rhandsontable::hot_context_menu(allowRowEdit = FALSE, allowColEdit = FALSE, allowComments = FALSE, allowCustomBorders = FALSE) |>
-          rhandsontable::hot_col("accnr", readOnly = TRUE) |>
           rhandsontable::hot_col("provid", renderer = rhot_renderer_validate_provid_gray_bg_on_read_only) |>
+          rhandsontable::hot_col(provid_table_readonly_cols[provid_table_readonly_cols %in% colnames(df)], readOnly = TRUE) |>
+          rhandsontable::hot_col(provid_table_number_columns[provid_table_number_columns %in% colnames(df)], format = "0") |>
           rhandsontable::hot_col(which(colnames(df) != "provid"), renderer = rhot_renderer_gray_bg_on_read_only) |>
           rhot_set_visual_colheaders(provid_table_cols_pretty[match(cols, provid_table_cols)]) |>
           rhot_disable_context_menu())
 
-        if (input[[prov_io(name, "homogenat")]]) {
-          for (row in seq_len(nrow(df))) {
-            if (isFALSE(df[row, "check", drop = TRUE])) {
-              for (col in which(colnames(df) != "check")) {
-                hot <- rhandsontable::hot_cell(hot, row, col, readOnly = TRUE)
-              }
+        for (row in seq_len(nrow(df))) {
+          if (isFALSE(df[row, ] |> select(any_of("check")) |> unlist(use.names = FALSE)) || is.na(df_all[row, "material_id"])) {
+            for (col in which(colnames(df) != "check")) {
+              hot <- rhandsontable::hot_cell(hot, row, col, readOnly = TRUE)
             }
           }
         }
@@ -258,6 +262,7 @@ mod_provlista_server <- function(id, db, account, selected, provlista, provbered
       provs(c(provs(), name))
 
       create_provid_table(name)
+      assign_material_id(name)
 
       add_new_prov_section_observe_events(name)
       logfine("mod_provlista.R - create_prov_section: finished")
