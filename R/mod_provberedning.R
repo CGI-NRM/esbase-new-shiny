@@ -299,6 +299,7 @@ mod_provberedning_server <- function(id, db, account) {
       selected$material_override_backup <- tibble()
 
       selected$update(selected$update() + 1)
+      logfine("mod_provberedning.R - update_selected_accnrs: finished")
     }
 
     # ---------- ONE-TIME SETUP ----------
@@ -307,6 +308,7 @@ mod_provberedning_server <- function(id, db, account) {
 
     # ---------- OBSERVE EVENTS ----------
     shiny::observeEvent(input$accnr_start, {
+      logdebug("mod_provberedning.R - observeEvent(input$accnr_start, {}): called")
       if (is.null(input$accnr_start) || input$accnr_start == "") {
         output$accnr_start_message <- shiny::renderText("")
         deselect_selected_accnrs()
@@ -323,9 +325,11 @@ mod_provberedning_server <- function(id, db, account) {
       }
 
       update_selected_accnrs()
+      logfine("mod_provberedning.R - observeEvent(input$accnr_start, {}): finished")
     })
 
     shiny::observeEvent(input$accnr_end, {
+      logdebug("mod_provberedning.R - observeEvent(input$accnr_end, {}): called")
       if (is.null(input$accnr_end) || input$accnr_end == "") {
         output$accnr_end_message <- shiny::renderText("")
         deselect_selected_accnrs()
