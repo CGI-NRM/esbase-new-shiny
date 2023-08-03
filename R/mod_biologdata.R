@@ -63,7 +63,7 @@ mod_biologdata_ui <- function(id) {
     ),
     rhandsontable::rHandsontableOutput(ns("details_table")),
     shiny::br(),
-    shiny::actionButton(inputId = ns("save"), label = "Spara")
+    shiny::actionButton(inputId = ns("save"), label = "Spara biologdata")
   )
 }
 

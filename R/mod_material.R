@@ -68,7 +68,7 @@ mod_material_ui <- function(id) {
     ),
     rhandsontable::rHandsontableOutput(ns("material_table")),
     shiny::br(),
-    shiny::actionButton(inputId = ns("save_changes"), label = "Spara ändringarna")
+    shiny::actionButton(inputId = ns("save_changes"), label = "Spara material/inventering")
     )
 }
 
