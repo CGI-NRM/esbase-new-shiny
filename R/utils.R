@@ -41,3 +41,7 @@ repr_gender <- function(x, db) {
   select(gender.code, gender.swe_name) |>
   apply(1, paste_collapse, collapse = "-")
 }
+
+is_blank <- function(x) {
+  is.na(x) || is.null(x) || length(x) == 0 || x == ""
+}
