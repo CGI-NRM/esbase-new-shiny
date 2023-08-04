@@ -6,7 +6,7 @@ classoption:
   - landscape
   - a4paper
 geometry: 
-  - margin=1.5cm
+  - margin=1.9cm
 params:
     selected: NA
     biologdata: NA
@@ -35,7 +35,7 @@ header-includes:
 
 \pagestyle{fancyplain}
 \fancyfoot[C]{}
-\renewcommand\plainheadrulewidth{.4pt}
+\renewcommand\plainheadrulewidth{.8pt}
 \rhead{Genererad \today}
 \lhead{Provberedningsrapport}
 \rfoot{\hfill \thepage \hfill NRM}
