@@ -144,13 +144,6 @@ mod_provlista_server <- function(id, db, account, selected, provlista, provbered
       logdebug("mod_provlista.R - render_provid_table: called")
       if (is.null(input[[prov_io(name, "homogenat")]]) ||
           is.null(input[[prov_io(name, "analyslab")]])) {
-        shiny::showNotification(
-          paste0(
-            "Kan inte rendrera provid_table för ",
-            name,
-            " då den saknar UI. Vänligen lägg till en issue på ",
-            "https://github.com/CGI-NRM/esbase-new-shiny/"
-          ), type = "error", duration = 20)
         return()
       }
 

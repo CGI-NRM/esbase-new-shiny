@@ -25,7 +25,7 @@ library(lubridate)
 library(logging)
 logReset()
 addHandler(writeToConsole)
-setLevel("FINE")
+setLevel("FINER")
 
 # Usefull funtion to pipe into when not all elements/columns contains data
 
@@ -46,18 +46,25 @@ source("mod_provberedning.R")
 source("mod_provlista.R")
 source("utils_provlista.R")
 source("mod_material.R")
+source("mod_login.R")
 
 db_password <- readLines("/run/secrets/db_password")
 db_username <- Sys.getenv()["DB_USERNAME"]
 db_host <- Sys.getenv()["DB_HOST"]
 db_dbname <- Sys.getenv()["DB_DBNAME"]
 
+# Logins
+if (!dir.exists("active_sessions/")) {
+  dir.create("active_sessions")
+}
+
 # Shiny App
 ui <- shiny::fluidPage(
   shinyjs::useShinyjs(),
+  shiny::includeScript("www/js.cookie.js"),
   shiny::includeCSS("www/style.css"),
   shiny::titlePanel("Esbase New"),
-  mod_provberedning_ui("provberedning")
+  mod_login_ui("login")
 )
 
 server <- function(input, output, session) {
@@ -105,11 +112,11 @@ server <- function(input, output, session) {
   logdebug(paste0("app.R - server: loading tables took ", format(load_end - load_start)))
 
   account <- dataHolder(
-    id = 630 # currently using Sara since Im not in my dump of the database, I am 4495
+    id = 0 # Will be set by mod_login
   )
 
   # ---------- MODULE SERVERS ----------
-  mod_provberedning_server("provberedning", db, account)
+  mod_login_server("login", db = db, account = account)
 }
 
 shiny::shinyApp(ui, server)
