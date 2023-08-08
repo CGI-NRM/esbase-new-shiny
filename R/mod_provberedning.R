@@ -4,14 +4,27 @@ mod_provberedning_ui <- function(id) {
   shiny::div(id = ns("provberedning"),
              shiny::div(style = "margin: 20px",
                         shiny::fluidRow(
-                          shiny::actionButton(
-                            inputId = ns("download_action_button"),
-                            label = "Skapa provberedningsrapport",
-                            icon = shiny::icon("download")),
-                          shiny::downloadButton(
-                            outputId = ns("download_report"),
-                            style = "visibility: hidden;")
-                        )
+                          shiny::column(7,
+                                        shiny::actionButton(
+                                          inputId = ns("download_action_button"),
+                                          label = "Skapa provberedningsrapport",
+                                          icon = shiny::icon("download")),
+                                        shiny::downloadButton(
+                                          outputId = ns("download_report"),
+                                          style = "visibility: hidden;")
+                          ),
+                          shiny::column(3,
+                                        style = "padding-right: 0px;",
+                                        shiny::textInput(
+                                          inputId = ns("provberedning_id"),
+                                          label = NULL,
+                                          placeholder = "Provberedning: 2023-0..."),
+                          ),
+                          shiny::column(2,
+                                        style = "padding-left: 0px;",
+                                        shiny::actionButton(inputId = ns("provberedning_load"), label = "Ladda Provberedning")
+                          )
+                        ),
              ),
              shiny::wellPanel(
                shiny::selectizeInput(
@@ -98,7 +111,18 @@ mod_provberedning_server <- function(id, db, account) {
   # $project
   # $beredningsdatum
   # $provberedare
-  provberednings_protokoll <- dataHolder()
+  provberednings_meta <- dataHolder()
+
+  # A holder for when a provberedning is loaded
+  # $update triggers when the data has been updated and all modules should restore from the data
+  restore <- dataHolder(
+    accnr_min = "",
+    accnr_max = "",
+    metas = data.frame(),
+    dfs = list(),
+    provberednings_meta = NULL,
+    update = shiny::reactiveVal(0)
+  )
 
   shiny::moduleServer(id, function(input, output, session) {
     loginfo("mod_provberedning_server.R: module server start")
@@ -118,12 +142,40 @@ mod_provberedning_server <- function(id, db, account) {
     create_download_handler <- function() {
       logdebug("mod_provberedning.R - create_download_handler: called")
       content_wrapper <- function(file) {
+        y <- as.character(year(today()))
+        prevs <- grep(paste0("^", y, "-[0-9]+\\.rds$"), list.files("provberedningar/", pattern = y), value = TRUE) |> sort()
+
+        print(prevs)
+
+        if (length(prevs) == 0) {
+          code <- paste0(y, "-0")
+        } else {
+          last <- prevs[length(prevs)]
+          value <- substring(last, 6, nchar(last) - 4) |> as.numeric()
+          code <- paste0(y, "-", value + 1)
+        }
+
+        saveRDS(
+          list(
+            metas = provlista$metas,
+            dfs = provlista$dfs,
+            accnr_min = selected$acc_min,
+            accnr_max = selected$acc_max,
+            provberednings_meta = list(
+              project = provberednings_meta$project,
+              provberedare = provberednings_meta$provberedare,
+              beredningsdatum = provberednings_meta$beredningsdatum
+            )),
+          file = paste0("provberedningar/", code, ".rds")
+        )
+
         report_content(file = file,
                        selected = selected,
                        biologdata = biologdata,
                        provlistas = provlista$dfs,
                        provlistas_metas = provlista$metas,
-                       db = db
+                       db = db,
+                       provberedning_id = code
         )
       }
 
@@ -362,8 +414,41 @@ mod_provberedning_server <- function(id, db, account) {
 
     shiny::observeEvent(input$project, {
       logdebug("mod_provberedning.R - observeEvent(input$project, {}): called")
-      provberednings_protokoll$project <- ifelse(input$project == "", NA, input$project)
+      provberednings_meta$project <- ifelse(input$project == "", NA, input$project)
       logfine("mod_provberedning.R - observeEvent(input$project, {}): finished")
+    })
+
+    shiny::observeEvent(input$provberedning_load, {
+      logdebug("mod_provberedning.R - observeEvent(input$provberedning_load, {}): called")
+      if (!stringr::str_detect(input$provberedning_id, "^[0-9]{4}-[0-9]*$")) {
+        shiny::showNotification("Ogiltigt format på provberedningsid, skriv i på formen 'YYYY-X...'", duration = 10, type = "warning")
+        return()
+      }
+
+      path <- paste0("provberedningar/", input$provberedning_id, ".rds")
+      if (!file.exists(path)) {
+        shiny::showNotification(
+          paste0("Kan inte hitta sparad provberedning med id: ", input$provberedning_id, "."),
+          duration = 10, type = "warning")
+        return()
+      }
+
+      res <- readRDS(path)
+      restore$accnr_min <- res$accnr_min
+      restore$accnr_max <- res$accnr_max
+      restore$metas <- res$metas
+      restore$dfs <- res$dfs
+      restore$provberednings_meta <- res$provberednings_meta
+
+      shiny::updateTextInput(session, inputId = "accnr_start", value = restore$accnr_min)
+      shiny::updateTextInput(session, inputId = "accnr_end", value = restore$accnr_max)
+      shiny::updateSelectizeInput(session, "project",
+                                  selected = ifelse(is.null(restore$provberednings_meta$project), NA, restore$provberednings_meta$project))
+
+      restore$update(restore$update() + 1)
+
+      shiny::showNotification(paste0("Hämtat provberedning: ", input$provberedning_id, "."), duration = 10)
+      logfine("mod_provberedning.R - observeEvent(input$provberedning_load, {}): finished")
     })
 
     # ---------- MODULE SERVERS ----------
@@ -372,7 +457,8 @@ mod_provberedning_server <- function(id, db, account) {
                           account = account,
                           selected = selected,
                           biologdata = biologdata,
-                          provberednings_protokoll = provberednings_protokoll)
+                          provberednings_meta = provberednings_meta,
+                          restore = restore)
     mod_material_server("material",
                         db = db,
                         account = account,
@@ -382,6 +468,7 @@ mod_provberedning_server <- function(id, db, account) {
                          account = account,
                          selected = selected,
                          provlista = provlista,
-                         provberednings_protokoll = provberednings_protokoll)
+                         provberednings_meta = provberednings_meta,
+                         restore = restore)
   })
 }

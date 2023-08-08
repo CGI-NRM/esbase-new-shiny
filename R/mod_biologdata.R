@@ -67,7 +67,7 @@ mod_biologdata_ui <- function(id) {
   )
 }
 
-mod_biologdata_server <- function(id, db, account, selected, biologdata, provberednings_protokoll) {
+mod_biologdata_server <- function(id, db, account, selected, biologdata, provberednings_meta, restore) {
 
   shiny::moduleServer(id, function(input, output, session) {
     loginfo("mod_biologdata.R: module server start")
@@ -247,5 +247,16 @@ mod_biologdata_server <- function(id, db, account, selected, biologdata, provber
       provberednings_protokoll$provberedare <- input$provberedare
       logfine("mod_biologdata.R - observeEvent(input$provberedare, {}): finished")
     })
+
+    shiny::observeEvent(restore$update(), {
+      logdebug("mod_biologdata.R - observeEvent(restore$update(), {}): called")
+      shiny::updateSelectizeInput(session, "provberedare", selected = restore$provberednings_meta$provberedare)
+      if (length(restore$provberednings_meta$beredningsdatum) == 0) {
+        shiny::updateDateInput(session, "beredningsdatum", value = NA)
+      } else {
+        shiny::updateDateInput(session, "beredningsdatum", value = restore$provberednings_meta$beredningsdatum)
+      }
+      logfine("mod_biologdata.R - observeEvent(restore$update(), {}): finished")
+    }, ignoreInit = TRUE)
   })
 }

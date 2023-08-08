@@ -58,6 +58,11 @@ if (!dir.exists("active_sessions/")) {
   dir.create("active_sessions")
 }
 
+# Saved provberedningar
+if (!dir.exists("provberedningar/")) {
+  dir.create("provberedningar")
+}
+
 # Shiny App
 ui <- shiny::fluidPage(
   shinyjs::useShinyjs(),

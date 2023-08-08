@@ -61,4 +61,5 @@ save_provlista <- function(db, account, selected, provlista, provberednings_prot
   }
 
   shiny::showNotification(paste0("Provberedning sparad för ", prov_name, "."))
+  analysisrecord_id
 }

@@ -16,7 +16,7 @@ mod_provlista_ui <- function(id) {
   )
 }
 
-mod_provlista_server <- function(id, db, account, selected, provlista, provberednings_protokoll) {
+mod_provlista_server <- function(id, db, account, selected, provlista, provberednings_meta, restore) {
   shiny::moduleServer(id, function(input, output, session) {
     loginfo("mod_provlista.R: module server start")
     # ---------- REACTIVE VARIABLES ----------
@@ -232,10 +232,11 @@ mod_provlista_server <- function(id, db, account, selected, provlista, provbered
       new_table[!new_table$check, "provid"] <- ""
 
       handle_provid_table_change(name, new_table)
+      render_provid_table(name)
       logfine("mod_provlista.R - sekvens_provid_fran_forsta: finished")
     }
 
-    create_prov_section <- function(name) {
+    create_prov_section <- function(name, do_create_provid_table = TRUE, before_stodlistor = NULL, after_stodlistor = NULL) {
       logdebug("mod_provlista.R - create_prov_section: called")
       if (name %in% provs()) {
         shiny::showNotification(
@@ -254,21 +255,38 @@ mod_provlista_server <- function(id, db, account, selected, provlista, provbered
 
       provs(c(provs(), name))
 
-      create_provid_table(name)
-      assign_material_id(name)
+      if (do_create_provid_table) {
+        create_provid_table(name)
+        assign_material_id(name)
+      }
 
       add_new_prov_section_observe_events(name)
+
+      # When Ui has been initialized
+      uid <- uuid::UUIDgenerate(use.time = TRUE, output = "string")
+      i <- prov_io(name, paste0("new_ui_initialized", uid))
+      shinyjs::runjs(paste0(
+          'Shiny.setInputValue("', session$ns(i), '", "true")'))
+      shiny::observeEvent(input[[i]], {
+        if (!is.null(before_stodlistor)) {
+          before_stodlistor(name)
+        }
+        update_select_inputs_with_stodlistor(name)
+        if (!is.null(after_stodlistor)) {
+          uid <- uuid::UUIDgenerate(use.time = TRUE, output = "string")
+          j <- prov_io(name, paste0("new_ui_stodlistor_updated", uid))
+          shinyjs::runjs(paste0(
+              'Shiny.setInputValue("', session$ns(j), '", "true")'))
+          shiny::observeEvent(input[[j]], {
+            after_stodlistor(name)
+          }, once = TRUE)
+        }
+      }, once = TRUE)
       logfine("mod_provlista.R - create_prov_section: finished")
     }
 
     add_new_prov_section_observe_events <- function(name) {
       logdebug("mod_provlista.R - add_new_prov_section_observe_events: called")
-      # Once the vavnad select exists, update it with the options from esbase
-      shiny::observeEvent(input[[prov_io(name, "vavnad")]], {
-        update_select_inputs_with_stodlistor(name)
-      }, once = TRUE)
-
-
       # This handles the first render aswell when the UI has been renderer, and the input$ has been initialized
       # Except for the initial prov1, where the input already exists and the observeEvent for selected$update()
       #     creates and does the initial render
@@ -304,26 +322,42 @@ mod_provlista_server <- function(id, db, account, selected, provlista, provbered
         }),
 
         shiny::observeEvent(input[[prov_io(name, "analyslab")]], {
+          if (isTRUE(input[[prov_io(name, "analyslab")]] == "")) {
+            return()
+          }
+
           provlista$metas[name, "analyslab"] <- ifelse(is.null(input[[prov_io(name, "analyslab")]]),
                                                              "", input[[prov_io(name, "analyslab")]])
         }),
 
         shiny::observeEvent(input[[prov_io(name, "analystyp")]], {
+          if (isTRUE(input[[prov_io(name, "analystyp")]] == "")) {
+            return()
+          }
           provlista$metas[name, "analystyp"] <- ifelse(is.null(input[[prov_io(name, "analystyp")]]),
                                                              "", input[[prov_io(name, "analystyp")]])
         }),
 
         shiny::observeEvent(input[[prov_io(name, "analytiker")]], {
+          if (isTRUE(input[[prov_io(name, "analytiker")]] == "")) {
+            return()
+          }
           provlista$metas[name, "analytiker"] <- ifelse(is.null(input[[prov_io(name, "analytiker")]]),
                                                               "", input[[prov_io(name, "analytiker")]])
         }),
 
         shiny::observeEvent(input[[prov_io(name, "provtagningsinst")]], {
+          if (isTRUE(input[[prov_io(name, "provtagningsinst")]] == "")) {
+            return()
+          }
           provlista$metas[name, "provtagningsinst"] <- ifelse(is.null(input[[prov_io(name, "provtagningsinst")]]),
                                                                     "", input[[prov_io(name, "provtagningsinst")]])
         }),
 
         shiny::observeEvent(input[[prov_io(name, "vavnad")]], {
+          if (isTRUE(input[[prov_io(name, "vavnad")]] == "")) {
+            return()
+          }
           provlista$metas[name, "vavnad"] <- ifelse(is.null(input[[prov_io(name, "vavnad")]]),
                                                           "", input[[prov_io(name, "vavnad")]])
           assign_material_id(name)
@@ -349,8 +383,12 @@ mod_provlista_server <- function(id, db, account, selected, provlista, provbered
                       filter(!is.na(material_type_id) & type.swe_name != ""))
         material_vector <- materials |> select(material_type_id) |> unlist(use.names = FALSE)
         names(material_vector) <- materials |> select(type.swe_name) |> unlist(use.names = FALSE)
+        curr_selected_material <- ifelse(
+          is.null(provlista$metas[name, "vavnad", drop = TRUE]) ||
+          provlista$metas[name, "vavnad", drop = TRUE] == "",
+          NA, provlista$metas[name, "vavnad", drop = TRUE])
         shiny::updateSelectizeInput(session, prov_io(name, "vavnad"), choices = material_vector,
-                                    selected = input[[prov_io(name, "vavnad")]], server = TRUE)
+                                    selected = curr_selected_material, server = TRUE)
       } else {
         shiny::updateSelectizeInput(session, prov_io(name, "vavnad"), choices = c(""),
                                     selected = NA, server = TRUE)
@@ -359,22 +397,30 @@ mod_provlista_server <- function(id, db, account, selected, provlista, provbered
       person_vector <- db$person |> select(id) |> unlist(use.names = FALSE)
       names(person_vector) <- db$person |> select(institution, firstname, lastname, town) |> apply(1, paste_collapse)
       person_vector <- person_vector[names(person_vector) != ""]
+      curr_selected_analytiker <- ifelse(
+        is.null(provlista$metas[name, "analytiker", drop = TRUE]) ||
+        provlista$metas[name, "analytiker", drop = TRUE] == "",
+        NA, provlista$metas[name, "analytiker", drop = TRUE])
       shiny::updateSelectizeInput(session, prov_io(name, "analytiker"), choices = person_vector,
-                                  selected = input[[prov_io(name, "analytiker")]], server = TRUE)
+                                  selected = curr_selected_analytiker, server = TRUE)
 
       analysis_type_vector <- db$analysis_type |> select(id) |> unlist(use.names = FALSE)
       names(analysis_type_vector) <- db$analysis_type |> select(name) |> apply(1, paste_collapse)
       analysis_type_vector <- analysis_type_vector[names(analysis_type_vector) != ""]
+      curr_selected_analystyp <- ifelse(
+        is.null(provlista$metas[name, "analystyp", drop = TRUE]) ||
+        provlista$metas[name, "analystyp", drop = TRUE] == "",
+        NA, provlista$metas[name, "analystyp", drop = TRUE])
       shiny::updateSelectizeInput(session, prov_io(name, "analystyp"), choices = analysis_type_vector,
-                                  selected = input[[prov_io(name, "analystyp")]], server = TRUE)
+                                  selected = curr_selected_analystyp, server = TRUE)
 
       logfine("mod_provlista.R - update_select_inputs_with_stodlistor: finished")
     }
 
-    delete_prov_section <- function(name) {
+    delete_prov_section <- function(name, force = FALSE) {
       logdebug("mod_provlista.R - delete_prov_section: called")
 
-      if (length(provs()) <= 1) {
+      if (length(provs()) <= 1 && !force) {
         shiny::showNotification("Det är endast en provsektion kvar, kan inte ta bort den.", duration = 10)
         return()
       }
@@ -383,7 +429,26 @@ mod_provlista_server <- function(id, db, account, selected, provlista, provbered
       provlista$metas <- provlista$metas[rownames(provlista$metas) != name, ]
       provlista$dfs[[name]] <- NULL
 
-      shiny::removeTab(inputId = "prov_tabset_panel", target = session$ns(prov_io(name, "tabpanel")))
+      # Wait for update inputs until removing the UI
+      shiny::observeEvent(input[[prov_io(name, "provid_table")]], {
+        if (is.null(provlista$dfs[[name]])) {
+          shiny::removeTab(inputId = "prov_tabset_panel", target = session$ns(prov_io(name, "tabpanel")))
+        }
+      }, once = TRUE, ignoreInit = TRUE)
+
+      shiny::updateSelectizeInput(session, prov_io(name, "vavnad"), selected = NA)
+      shiny::updateSelectizeInput(session, prov_io(name, "provtagningsinst"), selected = NA)
+      shiny::updateSelectizeInput(session, prov_io(name, "analystyp"), selected = NA)
+      shiny::updateSelectizeInput(session, prov_io(name, "analyslab"), selected = NA)
+      shiny::updateSelectizeInput(session, prov_io(name, "analytiker"), selected = NA)
+      shiny::updateTextInput(session, prov_io(name, "analystyp_notis"), value = "")
+      shiny::updateTextInput(session, prov_io(name, "notiser_resultat"), value = "")
+      shiny::updateCheckboxInput(session, prov_io(name, "homogenat"), value = FALSE)
+      output[[prov_io(name, "provid_table")]] <- rhandsontable::renderRHandsontable({
+        rhandsontable::rhandsontable(data.frame(), rowHeaders = FALSE, overflow = "visible", maxRows = 0) |>
+        rhandsontable::hot_context_menu(allowRowEdit = FALSE, allowColEdit = FALSE, allowComments = FALSE, allowCustomBorders = FALSE) |>
+        rhot_disable_context_menu()
+      })
 
       # destroy observers
       for (o in provs_observe_events[[name]]) {
@@ -391,10 +456,63 @@ mod_provlista_server <- function(id, db, account, selected, provlista, provbered
       }
 
       provs_observe_events[[name]] <- NULL
+      logfine("mod_provlista.R - delete_prov_section: finished")
+    }
+
+    update_select_from_metas <- function(prov) {
+      logdebug("mod_provlista.R - update_select_from_metas: called")
+      shiny::updateSelectizeInput(session, prov_io(prov, "vavnad"),
+                                  selected = ifelse(
+                                    is.null(provlista$metas[prov, "vavnad", drop = TRUE]) ||
+                                    provlista$metas[prov, "vavnad", drop = TRUE] == "",
+                                    NA,
+                                    provlista$metas[prov, "vavnad", drop = TRUE]))
+      shiny::updateCheckboxInput(session, prov_io(prov, "homogenat"),
+                                 value = ifelse(
+                                   is.null(provlista$metas[prov, "homogenat", drop = TRUE]) ||
+                                   provlista$metas[prov, "homogenat", drop = TRUE] == "",
+                                   FALSE,
+                                   provlista$metas[prov, "homogenat", drop = TRUE]))
+      shiny::updateSelectizeInput(session, prov_io(prov, "provtagningsinst"),
+                                  selected = ifelse(
+                                    is.null(provlista$metas[prov, "provtagningsinst", drop = TRUE]) ||
+                                    provlista$metas[prov, "provtagningsinst", drop = TRUE] == "",
+                                    NA,
+                                    provlista$metas[prov, "provtagningsinst", drop = TRUE]))
+      shiny::updateSelectizeInput(session, prov_io(prov, "analystyp"),
+                                  selected = ifelse(
+                                    is.null(provlista$metas[prov, "analystyp", drop = TRUE]) ||
+                                    provlista$metas[prov, "analystyp", drop = TRUE] == "",
+                                    NA,
+                                    provlista$metas[prov, "analystyp", drop = TRUE]))
+      shiny::updateSelectizeInput(session, prov_io(prov, "analyslab"),
+                                  selected = ifelse(
+                                    is.null(provlista$metas[prov, "analyslab", drop = TRUE]) ||
+                                    provlista$metas[prov, "analyslab", drop = TRUE] == "",
+                                    NA,
+                                    provlista$metas[prov, "analyslab", drop = TRUE]))
+      shiny::updateSelectizeInput(session, prov_io(prov, "analytiker"),
+                                  selected = ifelse(
+                                    is.null(provlista$metas[prov, "analytiker", drop = TRUE]) ||
+                                    provlista$metas[prov, "analytiker", drop = TRUE] == "",
+                                    NA,
+                                    provlista$metas[prov, "analytiker", drop = TRUE]))
+      shiny::updateTextInput(session, prov_io(prov, "analystyp_notis"),
+                             value = ifelse(
+                               is.null(provlista$metas[prov, "analystypnotis", drop = TRUE]),
+                               "",
+                               provlista$metas[prov, "analystypnotis", drop = TRUE]))
+      shiny::updateTextInput(session, prov_io(prov, "notiser_resultat"),
+                             value = ifelse(
+                               is.null(provlista$metas[prov, "resultatnotis", drop = TRUE]),
+                               "",
+                               provlista$metas[prov, "resultatnotis", drop = TRUE]))
+      logfine("mod_provlista.R - update_select_from_metas: finished")
     }
 
     # ---------- ONE-TIME SETUP ----------
     add_new_prov_section_observe_events("prov1")
+    update_select_inputs_with_stodlistor("prov1")
 
     # ---------- OBSERVE EVENTS ----------
     shiny::observeEvent(input$set_limniska, {
@@ -449,21 +567,73 @@ mod_provlista_server <- function(id, db, account, selected, provlista, provbered
                                  paste0("(", session$ns(""), ")(?<prov>.*)(_tabpanel)")
       )[, "prov"]
       render_provid_table(prov)
+      update_select_from_metas(prov)
       logfine("mod_provlista.R - observeEvent(input$prov_tabset_panel, {}): finished")
     })
 
     shiny::observeEvent(input$save, {
       logdebug("mod_provlista.R - observeEvent(input$save, {}): called")
-      for (prov in provs()) {
-        save_provlista(
-          db = db,
-          account = account,
-          selected = selected,
-          provlista = provlista,
-          provberednings_protokoll = provberednings_protokoll,
-          prov_name = prov)
-      }
+      lapply(
+        provs(),
+        function(prov) {
+          id <- save_provlista(
+            db = db,
+            account = account,
+            selected = selected,
+            provlista = provlista,
+            provberednings_meta = provberednings_meta,
+            prov_name = prov)
+          if (!is.null(id)) {
+            output[[prov_io(prov, "protokollnummer")]] <- shiny::renderText(paste0("- Protokollnummer: ", as.character(id)))
+            provlista$metas[prov, "protokollnummer"] <- id
+          }
+        })
       logfine("mod_provlista.R - observeEvent(input$save, {}): finished")
     })
+
+    shiny::observeEvent(restore$update(), {
+      logdebug("mod_provlista.R - observeEvent(restore$update(), {}): called")
+      for (prov in provs()) {
+        if (!(prov %in% names(restore$dfs))) {
+          delete_prov_section(prov, force = TRUE)
+        }
+      }
+
+      lapply(
+        names(restore$dfs),
+        function(prov) {
+          provlista$dfs[[prov]] <- restore$dfs[[prov]]
+          provlista$metas[prov, ] <- restore$metas[prov, ]
+
+          if (!(prov %in% provs())) {
+            create_prov_section(prov,
+            do_create_provid_table = FALSE,
+            before_stodlistor = function(prov) {
+              provlista$dfs[[prov]] <- restore$dfs[[prov]]
+              provlista$metas[prov, ] <- restore$metas[prov, ]
+            },
+            after_stodlistor = function(prov) {
+              provlista$dfs[[prov]] <- restore$dfs[[prov]]
+              provlista$metas[prov, ] <- restore$metas[prov, ]
+              update_select_from_metas(prov)
+              if (!is.na(provlista$metas[prov, "protokollnummer"])) {
+                output[[prov_io(prov, "protokollnummer")]] <- shiny::renderText(
+                  paste0("- Protokollnummer: ", as.character(provlista$metas[prov, "protokollnummer"])))
+              }
+            })
+          } else {
+            provlista$dfs[[prov]] <- restore$dfs[[prov]]
+            provlista$metas[prov, ] <- restore$metas[prov, ]
+            update_select_from_metas(prov)
+            if (!is.na(provlista$metas[prov, "protokollnummer"])) {
+              output[[prov_io(prov, "protokollnummer")]] <- shiny::renderText(
+                paste0("- Protokollnummer: ", as.character(provlista$metas[prov, "protokollnummer"])))
+            }
+          }
+        }
+      )
+
+      logfine("mod_provlista.R - observeEvent(restore$update(), {}): finished")
+    }, ignoreInit = TRUE)
   })
 }
