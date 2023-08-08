@@ -145,7 +145,7 @@ mod_provlista_server <- function(id, db, account, selected, provlista, provbered
       }
 
       if (changed) {
-        render_provid_table(name)
+        #render_provid_table(name)
       }
       logfine("mod_provlista.R - handle_provid_table_change: finished")
     }
