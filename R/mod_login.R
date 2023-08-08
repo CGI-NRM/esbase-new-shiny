@@ -69,7 +69,14 @@ font-size: 18px; font-weight: 600;"),
                                                            style = "color: red; font-weight: 600;
                                                            padding-top: 5px;font-size:16px;",
                                                            class = "text-center"))),
-                              ))
+                                shinyjs::hidden(
+                                  shiny::div(id = session$ns("lowpermisions"),
+                                             shiny::tags$p("Saknar redigeringsrättigheter.",
+                                                           style = "color: red; font-weight: 600;
+                                                           padding-top: 5px;font-size:16px;",
+                                                           class = "text-center"))),
+                              )
+                            )
     )
 
     # ---------- FUNCTIONS ----------
@@ -119,10 +126,13 @@ font-size: 18px; font-weight: 600;"),
 
             if (nrow(user) > 0) {
               account$id <- user[1, "id", drop = TRUE]
+              account$rights <- user[1, "rights", drop = TRUE]
 
               if (is.numeric(account$id)) {
-                uuid_session <- uuid::UUIDgenerate(use.time = FALSE, n = 1L, output = "string")
-                writeLines(as.character(account$id), paste0("active_sessions/", uuid_session))
+                if (account$rights == 1 || account$rights == 2) {
+                  status$logged_in <- TRUE
+                  uuid_session <- uuid::UUIDgenerate(use.time = FALSE, n = 1L, output = "string")
+                  writeLines(as.character(account$id), paste0("active_sessions/", uuid_session))
 
                   shinyjs::js$setcookie(uuid_session)
                   logfiner(
@@ -138,16 +148,16 @@ font-size: 18px; font-weight: 600;"),
                 }
               } else {
                 logfiner("mod_login.R - observeEvent(input$login, {}): account$id not numeric, cannot login")
-                shinyjs::toggle(id = "nomatch", anim = TRUE, time = 1, animType = "fade")
-                shinyjs::delay(3000, shinyjs::toggle(id = "nomatch", anim = TRUE, time = 1, animType = "fade"))
+                shinyjs::show(id = "nomatch", anim = TRUE, time = 1, animType = "fade")
+                shinyjs::delay(3000, shinyjs::hide(id = "nomatch", anim = TRUE, time = 1, animType = "fade"))
               }
             } else {
-              shinyjs::toggle(id = "nomatch", anim = TRUE, time = 1, animType = "fade")
-              shinyjs::delay(3000, shinyjs::toggle(id = "nomatch", anim = TRUE, time = 1, animType = "fade"))
+              shinyjs::show(id = "nomatch", anim = TRUE, time = 1, animType = "fade")
+              shinyjs::delay(3000, shinyjs::hide(id = "nomatch", anim = TRUE, time = 1, animType = "fade"))
             }
           } else {
-            shinyjs::toggle(id = "nomatch", anim = TRUE, time = 1, animType = "fade")
-            shinyjs::delay(3000, shinyjs::toggle(id = "nomatch", anim = TRUE, time = 1, animType = "fade"))
+            shinyjs::show(id = "nomatch", anim = TRUE, time = 1, animType = "fade")
+            shinyjs::delay(3000, shinyjs::hide(id = "nomatch", anim = TRUE, time = 1, animType = "fade"))
           }
           logfine("mod_login.R - observeEvent(input$login, {}): finished")
         })
