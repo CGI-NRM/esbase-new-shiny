@@ -353,7 +353,7 @@ mod_provlista_server <- function(id, db, account, selected, provlista, provbered
                                                              "", input[[prov_io(name, "analystyp")]])
         }),
 
-        shiny::observeEvent(input[[prov_io(name, "analystypnotis")]], {
+        shiny::observeEvent(input[[prov_io(name, "analystyp_notis")]], {
           provlista$metas[name, "analystypnotis"] <- ifelse(is.null(input[[prov_io(name, "analystyp_notis")]]),
                                                              "", input[[prov_io(name, "analystyp_notis")]])
         }),
