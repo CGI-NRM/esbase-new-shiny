@@ -238,13 +238,13 @@ mod_biologdata_server <- function(id, db, account, selected, biologdata, provber
 
     shiny::observeEvent(input$beredningsdatum, {
       logdebug("mod_biologdata.R - observeEvent(input$beredningsdatum, {}): called")
-      provberednings_protokoll$beredningsdatum <- input$beredningsdatum
+      provberednings_meta$beredningsdatum <- input$beredningsdatum
       logfine("mod_biologdata.R - observeEvent(input$beredningsdatum, {}): finished")
     })
 
     shiny::observeEvent(input$provberedare, {
       logdebug("mod_biologdata.R - observeEvent(input$provberedare, {}): called")
-      provberednings_protokoll$provberedare <- input$provberedare
+      provberednings_meta$provberedare <- input$provberedare
       logfine("mod_biologdata.R - observeEvent(input$provberedare, {}): finished")
     })
 
