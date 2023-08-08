@@ -20,7 +20,10 @@ provlist_ui <- function(prov_ns, name) {
         shiny::actionButton(inputId = prov_ns("delete_section"), label = "", icon = shiny::icon("trash"),
                             style = "color: white; background-color: red;"),
         style = "float: right;"),
-      shiny::h2(name, style = "color: #888888;"),
+      shiny::h2(name, style = "color: #888888; display: inline;"),
+      shiny::textOutput(outputId = prov_ns("protokollnummer"), inline = TRUE),
+      shiny::br(),
+      shiny::br(),
       shiny::fluidRow(
         shiny::column(3,
                       shiny::selectizeInput(
@@ -40,28 +43,19 @@ provlist_ui <- function(prov_ns, name) {
       ),
       shiny::hr(),
       shiny::fluidRow(
-        shiny::column(3,
+        shiny::column(4,
                       shiny::selectInput(inputId = prov_ns("provtagningsinst"),
                                          label = "Provtagnings instrument",
                                          choices = c("", "Metallskalpell/Metallpinsett", "Keramikkniv/Plastpinsett")
                       )
         ),
-        shiny::column(3,
-                      shiny::selectizeInput(
-                        inputId = prov_ns("analystyp"),
-                        label = "Analystyp",
-                        options = list(placeholder = "Analystyp", highlight = FALSE),
-                        choices = c(""),
-                        selected = NA
-                      )
-        ),
-        shiny::column(3,
+        shiny::column(4,
                       shiny::selectInput(inputId = prov_ns("analyslab"),
                                          label = "Analyslab",
                                          choices = c("", "ACES", "SLV", "Umeå")
                       )
         ),
-        shiny::column(3,
+        shiny::column(4,
                       shiny::selectizeInput(
                         inputId = prov_ns("analytiker"),
                         label = "Analytiker",
@@ -70,6 +64,29 @@ provlist_ui <- function(prov_ns, name) {
                         selected = NA
                       )
         ),
+      ),
+      shiny::fluidRow(
+        shiny::column(4,
+                      shiny::selectizeInput(
+                        inputId = prov_ns("analystyp"),
+                        label = "Analystyp",
+                        options = list(placeholder = "Analystyp", highlight = FALSE),
+                        choices = c(""),
+                        selected = NA
+                      )
+        ),
+        shiny::column(4,
+                      shiny::textInput(
+                        inputId = prov_ns("analystyp_notis"),
+                        label = "Analystypnois"
+                      )
+        ),
+        shiny::column(4,
+                      shiny::textInput(
+                        inputId = prov_ns("notiser_resultat"),
+                        label = "Notiser, resultat"
+                      )
+        )
       ),
       rhandsontable::rHandsontableOutput(prov_ns("provid_table")),
       shiny::br(),

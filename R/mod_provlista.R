@@ -33,7 +33,10 @@ mod_provlista_server <- function(id, db, account, selected, provlista, provbered
       analystyp = character(0),
       analytiker = character(0),
       provtagningsinst = character(0),
-      vavnad = character(0)
+      vavnad = character(0),
+      protokollnummer = numeric(0),
+      analystypnotis = character(0),
+      resultatnotis = character(0)
     )
     provs(c("prov1"))
 
@@ -106,11 +109,18 @@ mod_provlista_server <- function(id, db, account, selected, provlista, provbered
                                                          "", input[[prov_io(name, "analyslab")]])
       provlista$metas[name, "homogenat"] <- ifelse(is.null(input[[prov_io(name, "homogenat")]]),
                                                          FALSE, input[[prov_io(name, "homogenat")]])
+      provlista$metas[name, "analystypnotis"] <- ifelse(is.null(input[[prov_io(name, "analystyp_notis")]]),
+                                                        "", input[[prov_io(name, "analystyp_notis")]])
+      provlista$metas[name, "resultatnotis"] <- ifelse(is.null(input[[prov_io(name, "resultatnotis")]]),
+                                                       "", input[[prov_io(name, "resultatnotis")]])
       logfine("mod_provlista.R - create_provid_table: finished")
     }
 
     handle_provid_table_change <- function(name, new_table) {
       logdebug("mod_provlista.R - handle_provid_table_change: called")
+      if (nrow(provlista$dfs[[name]]) == 0 || nrow(new_table) == 0) {
+        return()
+      }
       if (is.null(provlista$dfs[[name]]) || nrow(new_table) != nrow(provlista$dfs[[name]])) {
         shiny::showNotification(
           paste0(
@@ -153,6 +163,10 @@ mod_provlista_server <- function(id, db, account, selected, provlista, provbered
           rhandsontable::hot_context_menu(allowRowEdit = FALSE, allowColEdit = FALSE, allowComments = FALSE, allowCustomBorders = FALSE) |>
           rhot_disable_context_menu()
         })
+        return()
+      }
+
+      if (is.null(selected$material) || nrow(selected$material) == 0) {
         return()
       }
 
@@ -209,6 +223,7 @@ mod_provlista_server <- function(id, db, account, selected, provlista, provbered
       new_table[selected$accs_db != "", "provid"] <- provlista$dfs[[name]][1, "provid"]
       new_table[!new_table$check, "provid"] <- ""
       handle_provid_table_change(name, new_table)
+      render_provid_table(name)
       logfine("mod_provlista.R - klona_provid_fran_forsta: finished")
     }
 
@@ -336,6 +351,16 @@ mod_provlista_server <- function(id, db, account, selected, provlista, provbered
           }
           provlista$metas[name, "analystyp"] <- ifelse(is.null(input[[prov_io(name, "analystyp")]]),
                                                              "", input[[prov_io(name, "analystyp")]])
+        }),
+
+        shiny::observeEvent(input[[prov_io(name, "analystypnotis")]], {
+          provlista$metas[name, "analystypnotis"] <- ifelse(is.null(input[[prov_io(name, "analystyp_notis")]]),
+                                                             "", input[[prov_io(name, "analystyp_notis")]])
+        }),
+
+        shiny::observeEvent(input[[prov_io(name, "notiser_resultat")]], {
+          provlista$metas[name, "resultatnotis"] <- ifelse(is.null(input[[prov_io(name, "notiser_resultat")]]),
+                                                           "", input[[prov_io(name, "notiser_resultat")]])
         }),
 
         shiny::observeEvent(input[[prov_io(name, "analytiker")]], {

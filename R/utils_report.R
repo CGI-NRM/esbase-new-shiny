@@ -19,7 +19,7 @@ biologdata_add_columns <- function(catalog, species) {
       cols <- c(cols,
                 "Skrott kvar (g) - frys",
                 "Parasit vikt (g) - kasserad",
-                "Sparad make (J/N) - frys",
+                "Sparad mage (J/N) - frys",
                 "Sparad otoliter (J/N) - otolitlåda")
     } else if (species == 511) { # Gädda
       cols <- c(cols,

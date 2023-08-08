@@ -34,15 +34,17 @@ header-includes:
   - \usepackage{datetime2}
 ---
 
+<!-- https://haozhu233.github.io/kableExtra/awesome_table_in_pdf.pdf -->
+
 \pagestyle{fancyplain}
 \fancyfoot[C]{}
 \renewcommand\plainheadrulewidth{.8pt}
 \rhead{Genererad \today}
-\lhead{Provberedningsrapport}
 \rfoot{\hfill \thepage \hfill NRM}
 
-<!-- https://haozhu233.github.io/kableExtra/awesome_table_in_pdf.pdf -->
-
+```{r, echo = FALSE, message = FALSE, results = 'asis'}
+cat("\\lhead{Provberedning: \\texttt{", params$provberedning_id, "}}")
+```
 
 ```{r, echo = FALSE, message = FALSE}
 options(knitr.kable.NA = "")
@@ -102,6 +104,7 @@ ccount_analyslab <- ccount
 ccount_analytiker <- ccount
 ccount_provtagningsinst <- ccount
 ccount_vavnad <- ccount
+ccount_protokollid <- ccount
 
 metas <- params$provlistas_metas |> mutate_at(c("analystyp", "analytiker", "vavnad"), as.numeric)
 
@@ -123,29 +126,34 @@ analytikers <- (mega_metas |>
 vavnads <- mega_metas |> select(material_type.swe_name) |> unlist(use.names = FALSE) |> na_if("") |> replace_na(" ")
 
 mega_metas <- mega_metas |>
-    mutate(analyslab = na_if(analyslab, ""), provtagningsinst = na_if(provtagningsinst, "")) |>
-    replace_na(list(analyslab = " ", provtagningsinst = " "))
+    mutate(analyslab = na_if(analyslab, ""),
+           provtagningsinst = na_if(provtagningsinst, ""),
+           protokollnummer = na_if(protokollnummer, "")) |>
+    replace_na(list(analyslab = " ", provtagningsinst = " ", protokollnummer = " "))
 
 names(ccount_provname) <- c(" ", names(params$provlistas))
-names(ccount_analystyp) <- c(" ", analystyps)
-names(ccount_analyslab) <- c(" ", mega_metas[, "analyslab", drop = TRUE])
-names(ccount_analytiker) <- c(" ", analytikers)
-names(ccount_provtagningsinst) <- c(" ", mega_metas[, "provtagningsinst", drop = TRUE])
-names(ccount_vavnad) <- c(" ", vavnads)
+names(ccount_analystyp) <- c("Analystyp", analystyps)
+names(ccount_analyslab) <- c("Analyslab", mega_metas[, "analyslab", drop = TRUE])
+names(ccount_analytiker) <- c("Analytiker", analytikers)
+names(ccount_provtagningsinst) <- c("Provtag. inst.", mega_metas[, "provtagningsinst", drop = TRUE])
+names(ccount_vavnad) <- c("Vävnad", vavnads)
+names(ccount_protokollid) <- c("Protokollnummer", mega_metas[, "protokollnummer", drop = TRUE])
+
 
 if (nrow(df) > 0) {
     knitr::kable(
                  df, "latex", col.names = cnames,
-                 linesep = "", booktabs = FALSE, caption = "Provlista") |>
+                 booktabs = FALSE, caption = "Provlista", linesep = "") |>
     kableExtra::kable_styling(latex_options = c("striped", "hold_position"), position = "center") |>
-    kableExtra::row_spec(row = 0, angle = 80) |>
+#    kableExtra::row_spec(row = 0, angle = 80) |>
     kableExtra::add_header_above(ccount_provtagningsinst) |>
     kableExtra::add_header_above(ccount_vavnad) |>
     kableExtra::add_header_above(ccount_analytiker) |>
     kableExtra::add_header_above(ccount_analyslab) |>
     kableExtra::add_header_above(ccount_analystyp) |>
     kableExtra::add_header_above(ccount_provname) |>
-    kableExtra::column_spec(grep("provid", colnames(df)), width = "3cm") |>
+    kableExtra::column_spec(grep("provid", colnames(df)), width = "2cm") |>
+    kableExtra::column_spec(grep("aces", colnames(df)), width = "1.8cm") |>
     kableExtraExtra_fit_to_page(caption = TRUE)
 }
 ```
